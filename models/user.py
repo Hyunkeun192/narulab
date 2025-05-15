@@ -11,8 +11,8 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    encrypted_email = Column(TEXT, nullable=False, unique=True)
-    encrypted_phone_number = Column(TEXT, nullable=False)
+    encrypted_email = Column(String(255), unique=True, nullable=False)
+    encrypted_phone_number = Column(String(255), nullable=False)
     nickname = Column(String(50), nullable=False)
     hashed_password = Column(TEXT, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

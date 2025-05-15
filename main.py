@@ -30,3 +30,7 @@ app.include_router(admin_external_admins.router)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Narulab API!"}
+
+if __name__ == "__main__":
+    from database.database import Base, engine
+    Base.metadata.create_all(bind=engine)

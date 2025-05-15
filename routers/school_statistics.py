@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 from io import StringIO
 import pandas as pd
 
-from app.database import get_db
-from app.models.test import Report, Test
-from app.models.user import User
-from app.models.institution_admin import InstitutionAdmin
-from app.dependencies.external_admin_auth import get_school_admin_user
+from database.database import get_db
+from models.test import Report, Test
+from models.user import User
+from models.institution_admin import InstitutionAdmin
+from dependencies.external_admin_auth import get_school_admin_user
 
 router = APIRouter(
     prefix="/api/school/statistics",

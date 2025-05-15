@@ -3,16 +3,16 @@ from sqlalchemy.orm import Session
 from uuid import UUID, uuid4
 from typing import List
 
-from app.database import get_db
-from app.models.scoring_rule import ScoringRule
-from app.schemas.test_scoring_rule import (
+from database import get_db
+from models.scoring_rule import ScoringRule
+from schemas.test_scoring_rule import (
     ScoringRuleCreateRequest,
     ScoringRuleUpdateRequest,
     ScoringRuleResponse,
 )
 
 # ✅ 관리자 인증 의존성 import
-from app.dependencies.admin_auth import get_current_admin_user
+from dependencies.admin_auth import get_current_admin_user
 
 # 관리자 채점 기준 라우터
 router = APIRouter(

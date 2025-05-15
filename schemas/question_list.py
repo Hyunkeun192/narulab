@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
-from app.models.question import QuestionStatus
+from models.question import QuestionStatus
 
 # 🔸 문항 목록 출력용 스키마
 class QuestionListItem(BaseModel):

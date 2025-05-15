@@ -3,18 +3,18 @@ from sqlalchemy.orm import Session
 from uuid import UUID, uuid4
 from typing import List
 
-from app.database import get_db
-from app.models.test import Test
-from app.models.question import Question
-from app.models.option import Option
-from app.schemas.test_detail import TestDetailResponse, QuestionWithOptions
-from app.schemas.test_create import TestCreateRequest, TestCreateResponse
-from app.schemas.test_add_question import AddQuestionRequest, AddQuestionResponse
-from app.schemas.test_remove_question import RemoveQuestionRequest, RemoveQuestionResponse
-from app.schemas.test_update import TestUpdateRequest, TestUpdateResponse
+from database import get_db
+from models.test import Test
+from models.question import Question
+from models.option import Option
+from schemas.test_detail import TestDetailResponse, QuestionWithOptions
+from schemas.test_create import TestCreateRequest, TestCreateResponse
+from schemas.test_add_question import AddQuestionRequest, AddQuestionResponse
+from schemas.test_remove_question import RemoveQuestionRequest, RemoveQuestionResponse
+from schemas.test_update import TestUpdateRequest, TestUpdateResponse
 
 # ✅ 관리자 인증 의존성 import
-from app.dependencies.admin_auth import get_current_admin_user
+from dependencies.admin_auth import get_current_admin_user
 
 # ✅ 관리자 인증 적용된 라우터
 router = APIRouter(

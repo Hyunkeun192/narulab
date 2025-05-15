@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 
-from app.database import get_db
-from app.models.question import Question, QuestionStatus
-from app.models.option import Option
-from app.schemas.ai_review import (
+from database import get_db
+from models.question import Question, QuestionStatus
+from models.option import Option
+from schemas.ai_review import (
     AIQuestionListItem,
     AIQuestionDetail,
     AIReviewRequest,
@@ -14,7 +14,7 @@ from app.schemas.ai_review import (
 )
 
 # ✅ 관리자 인증 의존성 import
-from app.dependencies.admin_auth import get_current_admin_user
+from dependencies.admin_auth import get_current_admin_user
 
 # 관리자 AI 문항 검토 라우터
 router = APIRouter(

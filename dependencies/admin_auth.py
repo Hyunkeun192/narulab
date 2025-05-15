@@ -4,8 +4,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from app.database.database import SessionLocal
-from app.models.user import User
+from database.database import SessionLocal
+from models.user import User
 
 # ✅ JWT 설정
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")

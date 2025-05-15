@@ -1,9 +1,9 @@
 # app/crud/user.py
 
 from sqlalchemy.orm import Session
-from app.models.user import User, UserProfile
-from app.schemas.user import UserCreate
-from app.core.security import hash_password
+from models.user import User, UserProfile
+from schemas.user import UserCreate
+from core.security import hash_password
 import uuid
 
 

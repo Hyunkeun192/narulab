@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from jose import jwt
-from app.core.config import settings
+from core.config import settings
 
 # ✅ JWT 설정
 SECRET_KEY = settings.JWT_SECRET_KEY

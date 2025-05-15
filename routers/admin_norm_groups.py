@@ -12,7 +12,7 @@ from app.schemas.test_norm_group import (
 )
 
 # ✅ 관리자 인증 의존성 import
-from app.dependencies.admin_auth import get_current_admin_user
+from dependencies.admin_auth import get_current_admin_user
 
 # 관리자 규준 관리 라우터
 router = APIRouter(

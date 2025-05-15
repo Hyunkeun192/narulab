@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from uuid import UUID
-from app.models.question import QuestionStatus
+from models.question import QuestionStatus
 
 # 🔸 선택지 출력용 스키마
 class OptionItem(BaseModel):

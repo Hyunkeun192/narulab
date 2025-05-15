@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database.database import SessionLocal
-from app.models.test import Test, Question, Option, Response, Report
+from database.database import SessionLocal
+from models.test import Test, Question, Option, Response, Report
 from typing import List
 from pydantic import BaseModel
 from enum import Enum

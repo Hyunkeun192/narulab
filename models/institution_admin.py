@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Boolean, Enum, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 from datetime import datetime
-from app.database.database import Base
+from database.database import Base
 
 class InstitutionAdmin(Base):
     __tablename__ = "institution_admins"

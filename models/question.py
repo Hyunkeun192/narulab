@@ -4,7 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, Text, Boolean, Enum as PgEnum, ForeignKey, Integer, DateTime
 from sqlalchemy.dialects.postgresql import UUID
-from app.database import Base  # SQLAlchemy Base 클래스 상속
+from database.database import Base  # SQLAlchemy Base 클래스 상속
 
 # 🔸 문항 상태 정의 (승인 대기/승인/반려)
 class QuestionStatus(str, enum.Enum):

@@ -1,8 +1,8 @@
 # app/database/database.py
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from app.core.config import settings
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from core.config import settings
 
 # SQLAlchemy 연결 엔진 생성
 engine = create_engine(
@@ -15,3 +15,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # 베이스 클래스 (모든 모델이 이걸 상속)
 Base = declarative_base()
+
+# ✅ get_db 함수 추가
+def get_db():
+    db: Session = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

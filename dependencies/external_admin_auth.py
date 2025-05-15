@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.database.database import SessionLocal
-from app.models.institution_admin import InstitutionAdmin
-from app.models.user import User
-from app.dependencies.admin_auth import get_current_user
+from database.database import SessionLocal
+from models.institution_admin import InstitutionAdmin
+from models.user import User
+from dependencies.admin_auth import get_current_user
 
 # ✅ 학교 관리자 인증
 def get_school_admin_user(

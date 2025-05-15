@@ -1,11 +1,11 @@
-# app/main.py
+# main.py
 
 from fastapi import FastAPI
-from app.routers import user, tests, reports, notifications, subscribe, ai  # ✅ 모든 라우터 import
-from app.routers import admin_questions  # ✅ 관리자 문항 라우터 추가
-from app.routers import admin_statistics  # ✅ 통계 다운로드 라우터 import 추가
-from app.routers import school_statistics, company_statistics
-from app.routers import admin_external_admins
+from routers import user, tests, reports, notifications, subscribe, ai  # ✅ 모든 라우터 import
+from routers import admin_questions  # ✅ 관리자 문항 라우터 추가
+from routers import admin_statistics  # ✅ 통계 다운로드 라우터 import 추가
+from routers import school_statistics, company_statistics
+from routers import admin_external_admins
 
 app = FastAPI(
     title="Narulab API",

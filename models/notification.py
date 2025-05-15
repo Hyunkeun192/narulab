@@ -3,7 +3,7 @@
 import uuid
 from sqlalchemy import Column, String, Boolean, DateTime
 from datetime import datetime
-from app.database.database import Base
+from database.database import Base
 
 
 # ✅ 사용자 알림 테이블

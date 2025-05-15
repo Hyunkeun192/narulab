@@ -1,7 +1,7 @@
 from uuid import uuid4
 from sqlalchemy import Column, String, Text, Boolean, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
-from app.database import Base  # SQLAlchemy Base 클래스 상속
+from database.database import Base  # SQLAlchemy Base 클래스 상속
 
 # 🔸 options 테이블 정의 (문항 선택지)
 class Option(Base):

@@ -3,15 +3,15 @@ from sqlalchemy.orm import Session
 from uuid import UUID, uuid4
 from typing import Optional, List
 
-from app.database import get_db
-from app.models.question import Question, QuestionStatus
-from app.models.option import Option
-from app.schemas.question_review import QuestionReviewRequest, QuestionReviewResponse
-from app.schemas.question_list import QuestionListItem
-from app.schemas.question_create import QuestionCreateRequest, QuestionCreateResponse
+from database.database import get_db
+from models.question import Question, QuestionStatus
+from models.option import Option
+from schemas.question_review import QuestionReviewRequest, QuestionReviewResponse
+from schemas.question_list import QuestionListItem
+from schemas.question_create import QuestionCreateRequest, QuestionCreateResponse
 
 # ✅ 관리자 인증 의존성 import
-from app.dependencies.admin_auth import get_current_admin_user
+from dependencies.admin_auth import get_current_admin_user
 
 # 관리자 문항 관련 라우터 정의
 router = APIRouter(

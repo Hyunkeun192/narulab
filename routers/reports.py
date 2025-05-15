@@ -2,17 +2,18 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database.database import SessionLocal
-from app.models.test import Report, Test
+from database.database import SessionLocal
+from models.test import Report, Test
 from typing import List
 from pydantic import BaseModel
 from datetime import datetime
 
-# ✅ PDF 다운로드 관련 추가 import
 from fastapi.responses import Response
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML
 import os
+
+# ✅ 환경설정 import
+from core.config import settings
 
 router = APIRouter()
 
@@ -55,10 +56,8 @@ class ReportDetail(BaseModel):
 # ✅ 리포트 목록 조회 API
 @router.get("/api/reports/me", response_model=List[ReportSummary])
 def get_my_reports(email: str, db: Session = Depends(get_db)):
-    # 암호화된 이메일 기준 조회
     reports = db.query(Report).filter(Report.email == email).order_by(Report.report_generated_at.desc()).all()
 
-    # 각 리포트에 검사명 포함
     result = []
     for r in reports:
         test = db.query(Test).filter(Test.test_id == r.test_id).first()
@@ -92,7 +91,7 @@ def get_report_detail(report_id: str, db: Session = Depends(get_db)):
     )
 
 
-# ✅ 리포트 PDF 다운로드 API
+# ✅ 리포트 PDF 또는 HTML 다운로드 API (운영: PDF, 개발: HTML 반환)
 @router.get("/api/reports/{report_id}/download/pdf")
 def download_report_pdf(report_id: str, db: Session = Depends(get_db)):
     report = db.query(Report).filter(Report.report_id == report_id).first()
@@ -116,11 +115,22 @@ def download_report_pdf(report_id: str, db: Session = Depends(get_db)):
         "result_summary": report.result_summary
     })
 
-    # PDF 생성
-    pdf = HTML(string=html_content).write_pdf()
+    # ✅ 운영환경에서만 PDF 렌더링 (weasyprint import는 내부에서만 시도)
+    if settings.ENV == "production":
+        try:
+            from weasyprint import HTML
+            pdf = HTML(string=html_content).write_pdf()
+            return Response(
+                content=pdf,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f"attachment; filename=report_{report_id}.pdf"}
+            )
+        except ImportError:
+            raise HTTPException(status_code=500, detail="weasyprint 라이브러리가 서버에 설치되어 있지 않습니다.")
 
+    # ✅ 개발 환경: HTML로 직접 반환
     return Response(
-        content=pdf,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=report_{report_id}.pdf"}
+        content=html_content,
+        media_type="text/html",
+        headers={"Content-Disposition": f"inline; filename=report_{report_id}.html"}
     )

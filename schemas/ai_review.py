@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from uuid import UUID
-from app.models.question import QuestionStatus
+from models.question import QuestionStatus
 
 # 🔸 AI 문항 목록 응답용 스키마
 class AIQuestionListItem(BaseModel):

@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 import base64
 import os
 
-from app.core.config import settings
+from core.config import settings
 
 
 # 🔐 bcrypt를 활용한 비밀번호 해시 및 검증을 위한 설정

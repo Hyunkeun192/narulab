@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import uuid4
 
-from app.database import get_db
-from app.models.institution_admin import InstitutionAdmin
-from app.models.user import User
-from app.dependencies.admin_auth import get_super_admin_user
-from app.schemas.external_admin import (
+from database.database import get_db
+from models.institution_admin import InstitutionAdmin
+from models.user import User
+from dependencies.admin_auth import get_super_admin_user
+from schemas.external_admin import (
     ExternalAdminCreateRequest,
     ExternalAdminApprovalRequest
 )

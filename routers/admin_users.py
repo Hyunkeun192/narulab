@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from sqlalchemy import or_
 
-from app.database import get_db
-from app.models.user import User
-from app.schemas.user_admin import UserListItem
-from app.dependencies.admin_auth import get_current_admin_user
+from database import get_db
+from models.user import User
+from schemas.user_admin import UserListItem
+from dependencies.admin_auth import get_current_admin_user
 
 # 관리자 사용자 관리 라우터
 router = APIRouter(

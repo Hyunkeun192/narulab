@@ -4,8 +4,12 @@ import uuid
 from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, DateTime, Enum, Text, Float, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.database.database import Base
+from database.database import Base
 import enum
+
+# ✅ 외부에서 Question, Option 모델 import
+from models.question import Question
+from models.option import Option
 
 
 # ✅ 검사 유형 enum
@@ -35,36 +39,6 @@ class QuestionTypeEnum(str, enum.Enum):
     text = "text"
     image = "image"
     text_image = "text+image"
-
-
-# ✅ 문항 테이블
-class Question(Base):
-    __tablename__ = "questions"
-
-    question_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    test_id = Column(String(36), ForeignKey("tests.test_id"))
-    question_type = Column(Enum(QuestionTypeEnum), nullable=False)
-    question_text = Column(Text)
-    question_image_url = Column(Text)
-    is_multiple_choice = Column(Boolean, default=False)
-    order_index = Column(Integer)
-
-    test = relationship("Test", back_populates="questions")
-    options = relationship("Option", back_populates="question")
-
-
-# ✅ 선택지 테이블
-class Option(Base):
-    __tablename__ = "options"
-
-    option_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    question_id = Column(String(36), ForeignKey("questions.question_id"))
-    option_text = Column(Text)
-    option_image_url = Column(Text)
-    is_correct = Column(Boolean, default=False)
-    option_order = Column(Integer)
-
-    question = relationship("Question", back_populates="options")
 
 
 # ✅ 사용자 응답 테이블

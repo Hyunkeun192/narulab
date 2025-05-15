@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.database.database import SessionLocal
+from database.database import SessionLocal
 from pydantic import BaseModel
 
 router = APIRouter()

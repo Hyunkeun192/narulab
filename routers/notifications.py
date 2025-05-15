@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.database.database import SessionLocal
-from app.models.test import TestTypeEnum  # optional
+from database.database import SessionLocal
+from models.test import TestTypeEnum  # optional
 from pydantic import BaseModel
-from app.models.notification import Notification  # 아래 모델 생성 필요
+from models.notification import Notification  # 아래 모델 생성 필요
 from typing import List
 from datetime import datetime
 

@@ -1,11 +1,17 @@
 # main.py
 
+import builtins
+import typing
+builtins.Any = typing.Any  # ✅ 모든 eval(), 모든 서브모듈, 모든 프로세스에서 유효
+
 from fastapi import FastAPI
 from routers import user, tests, reports, notifications, subscribe, ai  # ✅ 모든 라우터 import
 from routers import admin_questions  # ✅ 관리자 문항 라우터 추가
 from routers import admin_statistics  # ✅ 통계 다운로드 라우터 import 추가
 from routers import school_statistics, company_statistics
 from routers import admin_external_admins
+from routers import verification
+
 
 app = FastAPI(
     title="Narulab API",
@@ -25,6 +31,8 @@ app.include_router(admin_statistics.router)  # ✅ 슈퍼 관리자 통계 다�
 app.include_router(school_statistics.router)   # ✅ 학교 관리자 라우터
 app.include_router(company_statistics.router)  # ✅ 기업 관리자 라우터
 app.include_router(admin_external_admins.router)
+app.include_router(verification.router)
+
 
 # ✅ 루트 경로 확인용
 @app.get("/")

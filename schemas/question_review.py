@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 
 # 🔸 문항 검토 요청 스키마
 class QuestionReviewRequest(BaseModel):

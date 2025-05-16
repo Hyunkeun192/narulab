@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Any
 from uuid import UUID
 
 # 🔸 문항 추가 요청 스키마

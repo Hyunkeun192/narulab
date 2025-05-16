@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal, Any
 
 # 🔸 외부 관리자 등록 요청
 class ExternalAdminCreateRequest(BaseModel):

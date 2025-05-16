@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.database import SessionLocal
 from models.test import Report, Test
-from typing import List
+from typing import List, Any
 from pydantic import BaseModel
 from datetime import datetime
 

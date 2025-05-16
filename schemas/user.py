@@ -1,13 +1,19 @@
 # app/schemas/user.py
 
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Any
 
 # 회원가입 요청용
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    password_confirm: str  # ✅ 비밀번호 확인 추가
     phone_number: str
+    nickname: str  # ✅ 닉네임 직접 입력 가능하도록 추가
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
 
 
 # 사용자 응답용 (기본 정보)
@@ -19,7 +25,6 @@ class UserResponse(BaseModel):
 
     class Config:
         orm_mode = True
-
 
 # 사용자 프로필 정보
 class UserProfileSchema(BaseModel):

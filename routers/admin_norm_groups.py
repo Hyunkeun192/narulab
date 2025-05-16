@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from uuid import UUID, uuid4
-from typing import List
+from typing import List, Any
 
 from app.database import get_db
 from app.models.norm_group import NormGroup

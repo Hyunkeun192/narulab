@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Any
 
 # 🔸 채점 기준 등록 요청
 class ScoringRuleCreateRequest(BaseModel):

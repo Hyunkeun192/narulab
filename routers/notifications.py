@@ -6,7 +6,7 @@ from database.database import SessionLocal
 from models.test import TestTypeEnum  # optional
 from pydantic import BaseModel
 from models.notification import Notification  # 아래 모델 생성 필요
-from typing import List
+from typing import List, Any
 from datetime import datetime
 
 router = APIRouter()

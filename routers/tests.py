@@ -2,33 +2,27 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database.database import SessionLocal
+from database.database import get_db
 from models.test import Test, Question, Option, Response, Report
-from typing import List, Any
+from models.test_analytics_by_group import TestAnalyticsByGroup, GroupTypeEnum
+from models.question_stats_by_group import QuestionStatsByGroup
+from models.sten_rule import STENRule  # ✅ STEN 등급 규칙 모델 import
+from models.user import UserProfile  # ✅ 사용자 프로필 (school 등)
+from typing import List
 from pydantic import BaseModel
 from enum import Enum
 from datetime import datetime
 import uuid
+import json
 
 router = APIRouter()
-
-
-# ✅ DB 세션 의존성
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 # ✅ 검사 유형 enum
 class TestTypeEnum(str, Enum):
     aptitude = "aptitude"
     personality = "personality"
 
-
-# ✅ 검사 목록 응답 스키마
+# ✅ 검사 목록 응답용 스키마
 class TestSummary(BaseModel):
     test_id: str
     test_name: str
@@ -39,8 +33,7 @@ class TestSummary(BaseModel):
     class Config:
         orm_mode = True
 
-
-# ✅ 선택지 스키마
+# ✅ 선택지 응답용 스키마
 class OptionSchema(BaseModel):
     option_id: str
     option_text: str
@@ -49,8 +42,7 @@ class OptionSchema(BaseModel):
     class Config:
         orm_mode = True
 
-
-# ✅ 문항 스키마
+# ✅ 문항 응답용 스키마
 class QuestionSchema(BaseModel):
     question_id: str
     question_text: str
@@ -62,8 +54,7 @@ class QuestionSchema(BaseModel):
     class Config:
         orm_mode = True
 
-
-# ✅ 검사 상세 스키마
+# ✅ 검사 상세 조회용 스키마
 class TestDetail(BaseModel):
     test_id: str
     test_name: str
@@ -73,31 +64,54 @@ class TestDetail(BaseModel):
     class Config:
         orm_mode = True
 
-
-# ✅ 검사 목록 조회
+# ✅ 전체 검사 목록 조회
 @router.get("/api/tests", response_model=List[TestSummary])
 def get_tests(db: Session = Depends(get_db)):
     tests = db.query(Test).order_by(Test.created_at.desc()).all()
     return tests
 
-
-# ✅ 검사 상세 조회
+# ✅ 단일 검사 상세 조회
 @router.get("/api/tests/{test_id}", response_model=TestDetail)
 def get_test_detail(test_id: str, db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.test_id == test_id).first()
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
-    return test
 
+    questions = db.query(Question).filter(Question.test_id == test_id).order_by(Question.order_index).all()
+    question_data = []
+    for q in questions:
+        options = db.query(Option).filter(Option.question_id == q.question_id).order_by(Option.option_order).all()
+        question_data.append(QuestionSchema(
+            question_id=q.question_id,
+            question_text=q.question_text,
+            question_type=q.question_type,
+            is_multiple_choice=q.is_multiple_choice,
+            order_index=q.order_index,
+            options=[
+                OptionSchema(
+                    option_id=opt.option_id,
+                    option_text=opt.option_text,
+                    option_order=opt.option_order
+                ) for opt in options
+            ]
+        ))
 
-# ✅ 검사 시작
+    return TestDetail(
+        test_id=test.test_id,
+        test_name=test.test_name,
+        duration_minutes=test.duration_minutes,
+        questions=question_data
+    )
+# ✅ 검사 시작 요청 스키마
 class StartRequest(BaseModel):
     mode: str
 
+# ✅ 검사 시작 응답 스키마
 class StartResponse(BaseModel):
     message: str
     started_at: datetime
 
+# ✅ 검사 시작 API
 @router.post("/api/tests/{test_id}/start", response_model=StartResponse)
 def start_test(test_id: str, request: StartRequest, db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.test_id == test_id).first()
@@ -105,25 +119,21 @@ def start_test(test_id: str, request: StartRequest, db: Session = Depends(get_db
         raise HTTPException(status_code=404, detail="Test not found")
     return StartResponse(message="Test session started.", started_at=datetime.utcnow())
 
-
 # ✅ 응답 제출 요청 스키마
 class AnswerSubmission(BaseModel):
     question_id: str
     selected_option_ids: List[str]
 
-
 class SubmitRequest(BaseModel):
-    email: str  # 암호화된 이메일
+    email: str
     responses: List[AnswerSubmission]
-
 
 # ✅ 응답 제출 응답 스키마
 class SubmitResponse(BaseModel):
     message: str
     report_id: str
 
-
-# ✅ 검사 응답 제출 API
+# ✅ 응답 제출 API 시작
 @router.post("/api/tests/{test_id}/submit", response_model=SubmitResponse)
 def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.test_id == test_id).first()
@@ -131,6 +141,14 @@ def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Test not found")
 
     total_score = 0.0
+    now = datetime.utcnow()
+    year, month = now.year, now.month
+
+    # ✅ 사용자 프로필 조회 (school 기준 그룹 통계용)
+    profile = db.query(UserProfile).filter(UserProfile.email == request.email).first()
+    group_value = profile.school if profile else None
+
+    # ✅ 문항 응답 순회 및 채점 처리
     for item in request.responses:
         question = db.query(Question).filter(
             Question.question_id == item.question_id,
@@ -140,7 +158,6 @@ def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_
         if not question:
             continue
 
-        # 정답 옵션 목록
         correct_option_ids = [
             opt.option_id for opt in db.query(Option).filter(
                 Option.question_id == item.question_id,
@@ -148,32 +165,108 @@ def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_
             ).all()
         ]
 
-        # 정답 비교 (단순 정확 일치 기준)
-        if set(item.selected_option_ids) == set(correct_option_ids):
+        is_correct = set(item.selected_option_ids) == set(correct_option_ids)
+        if is_correct:
             total_score += 1
 
-        # 응답 저장
+        # ✅ 응답 저장
         response = Response(
             response_id=str(uuid.uuid4()),
             email=request.email,
             test_id=test_id,
             question_id=item.question_id,
             selected_option_ids=item.selected_option_ids,
-            response_time_sec=0.0  # TODO: 응답 시간 추후 반영
+            response_time_sec=0.0  # TODO: 측정 기능 적용 예정
         )
         db.add(response)
+        # ✅ 문항별 그룹 통계 자동 집계 (school 기준)
+        if group_value:
+            stat = db.query(QuestionStatsByGroup).filter_by(
+                question_id=item.question_id,
+                group_type=GroupTypeEnum.school,
+                group_value=group_value,
+                year=year,
+                month=month
+            ).first()
 
-    # 리포트 저장
+            if stat:
+                previous_n = stat.num_responses
+                stat.num_responses += 1
+                stat.correct_rate = ((stat.correct_rate * previous_n) + (1 if is_correct else 0)) / stat.num_responses
+                stat.avg_response_time = ((stat.avg_response_time * previous_n) + 0.0) / stat.num_responses
+
+                # ✅ 선택지 분포 업데이트
+                dist = json.loads(stat.option_distribution_json or '{}')
+                for opt_id in item.selected_option_ids:
+                    dist[opt_id] = dist.get(opt_id, 0) + 1
+                stat.option_distribution_json = json.dumps(dist)
+
+            else:
+                stat = QuestionStatsByGroup(
+                    question_id=item.question_id,
+                    group_type=GroupTypeEnum.school,
+                    group_value=group_value,
+                    year=year,
+                    month=month,
+                    num_responses=1,
+                    correct_rate=1.0 if is_correct else 0.0,
+                    avg_response_time=0.0,
+                    option_distribution_json=json.dumps({
+                        opt_id: 1 for opt_id in item.selected_option_ids
+                    })
+                )
+                db.add(stat)
+
+    # ✅ STEN 등급 계산 로직 (score_standardized → score_level)
+    score_standardized = total_score * 10
+
+    sten_rule = db.query(STENRule).filter(
+        STENRule.test_id == test_id,
+        STENRule.min_score <= score_standardized,
+        STENRule.max_score >= score_standardized
+    ).first()
+
+    score_level = f"STEN {sten_rule.sten_level}" if sten_rule else "STEN N/A"
+    
+    # ✅ STEN 분포 자동 집계
+    sten_num = int(sten_rule.sten_level) if sten_rule else None
+    if sten_num and 1 <= sten_num <= 10:
+        for group_type, group_val in [
+            ("overall", "all"),
+            ("school", profile.school if profile else None)
+        ]:
+            if group_val:
+                dist = db.query(ReportSTENDistribution).filter_by(
+                    test_id=test_id,
+                    group_type=group_type,
+                    group_value=group_val,
+                    year=year,
+                    month=month
+                ).first()
+                if not dist:
+                    dist = ReportSTENDistribution(
+                        test_id=test_id,
+                        group_type=group_type,
+                        group_value=group_val,
+                        year=year,
+                        month=month
+                    )
+                    db.add(dist)
+                setattr(dist, f"sten_{sten_num}", getattr(dist, f"sten_{sten_num}") + 1)
+
+    # ✅ 리포트 저장
     report = Report(
         report_id=str(uuid.uuid4()),
         email=request.email,
         test_id=test_id,
         score_total=total_score,
-        score_standardized=total_score * 10,  # 임시 변환 로직
-        score_level="STEN 7",  # TODO: 나중에 규준 기반 계산
-        result_summary="임시 요약",  # TODO: GPT 기반 요약 예정
+        score_standardized=score_standardized,  # ✅ STEN 계산 기준 점수
+        score_level=score_level,                # ✅ STEN 규칙 적용 결과
+        result_summary="임시 요약"              # TODO: GPT 기반 요약으로 확장 가능
     )
     db.add(report)
+
+    # ✅ 최종 커밋 및 리포트 ID 응답
     db.commit()
     db.refresh(report)
 

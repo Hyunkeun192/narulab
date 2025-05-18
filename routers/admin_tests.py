@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from uuid import UUID, uuid4
 from typing import List, Any
 
-from database import get_db
+from database.database import get_db
 from models.test import Test
 from models.question import Question
 from models.option import Option
@@ -70,13 +70,14 @@ def get_test_detail(
         questions=question_items
     )
 
-
 # ✅ 검사 등록 API
 @router.post("/", response_model=TestCreateResponse)
 def create_test(
-    request: TestCreateRequest,
-    db: Session = Depends(get_db)
+    request: TestCreateRequest = Body(...),        # ✅ body 맨 앞
+    db: Session = Depends(get_db),                 # ✅ 의존성 중간
+    local_kw: str = Query(..., alias="local_kw")   # ✅ 쿼리 마지막
 ):
+    
     existing = (
         db.query(Test)
         .filter(Test.test_name == request.test_name, Test.version == request.version)
@@ -99,7 +100,6 @@ def create_test(
         test_id=test.test_id,
         message="Test created successfully."
     )
-
 
 # ✅ 검사에 문항 연결 API
 @router.post("/{test_id}/add-question", response_model=AddQuestionResponse)
@@ -126,7 +126,6 @@ def add_questions_to_test(
         added_count=added_count,
         message=f"{added_count} questions added to test."
     )
-
 
 # ✅ 검사에서 문항 제거 API
 @router.post("/{test_id}/remove-question", response_model=RemoveQuestionResponse)
@@ -156,7 +155,6 @@ def remove_questions_from_test(
         removed_count=removed_count,
         message=f"{removed_count} questions removed from test."
     )
-
 
 # ✅ 검사 정보 수정 API
 @router.put("/{test_id}", response_model=TestUpdateResponse)

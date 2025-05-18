@@ -16,9 +16,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # 베이스 클래스 (모든 모델이 이걸 상속)
 Base = declarative_base()
 
-# ✅ get_db 함수 추가
+# ✅ get_db 함수 수정
 def get_db():
-    db: Session = SessionLocal()
+    db = SessionLocal()
     try:
         yield db
     finally:

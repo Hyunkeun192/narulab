@@ -259,3 +259,44 @@ def compare_group_scores(
         "test_name": test.test_name,
         "groups": summary.to_dict(orient="records")
     }
+
+@router.get("/summary")
+def get_system_statistics_summary(db: Session = Depends(get_db)):
+    """
+    전체 사용자 / 테스트 / 리포트 수 등 요약 정보 반환
+    """
+    total_users = db.query(User).count()
+    total_tests = db.query(Test).count()
+    total_reports = db.query(Report).count()
+
+    avg_score = db.query(Report.score_total).all()
+    scores = [r[0] for r in avg_score if r[0] is not None]
+    average_score = sum(scores) / len(scores) if scores else None
+
+    return {
+        "total_users": total_users,
+        "total_tests": total_tests,
+        "total_reports": total_reports,
+        "average_score": average_score
+    }
+
+@router.get("/tests/{test_id}/results")
+def get_test_result_summary(test_id: UUID, db: Session = Depends(get_db)):
+    """
+    특정 테스트 결과 평균, 최고/최저, STEN 분포
+    """
+    reports = db.query(Report).filter(Report.test_id == test_id).all()
+    scores = [r.score_total for r in reports if r.score_total is not None]
+
+    sten_distribution = {}
+    for i in range(1, 10):
+        sten_distribution[f"STEN {i}"] = sum(1 for r in reports if r.score_level == f"STEN {i}")
+
+    return {
+        "test_id": test_id,
+        "average_score": round(sum(scores) / len(scores), 2) if scores else None,
+        "min_score": min(scores) if scores else None,
+        "max_score": max(scores) if scores else None,
+        "sten_distribution": sten_distribution
+    }
+

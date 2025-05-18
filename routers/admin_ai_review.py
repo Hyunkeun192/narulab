@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional, Any
 from uuid import UUID
 
-from database import get_db
+from database.database import get_db
 from models.question import Question, QuestionStatus
 from models.option import Option
 from schemas.ai_review import (

@@ -1,21 +1,18 @@
 # app/routers/user.py
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body
 from sqlalchemy.orm import Session
 from schemas.user import UserCreate, UserResponse, UserLogin  # ✅ 로그인 모델 추가 import
 from crud import user as crud_user
-from database.database import SessionLocal
+from database.database import SessionLocal, get_db
 from core import security, token  # 🔐 보안/토큰 유틸
+from models.user import User
+from core.security import get_current_user  # ✅ 현재 로그인 유저 확인용 의존성
+from models.user_deletion_log import UserDeletionLog  # ✅ 사용자 탈퇴 로그 모델 import
+from datetime import datetime
+from typing import Optional
 
 router = APIRouter()
-
-# ✅ DB 세션 의존성
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # ✅ 회원가입 API
 @router.post("/api/signup", response_model=UserResponse)
@@ -38,36 +35,43 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     if existing_phone:
         raise HTTPException(status_code=400, detail="Phone number already exists.")
 
-    # 5. 사용자 생성
-    user = crud_user.create_user(db, user_data, encrypted_email, encrypted_phone)
-    crud_user.create_user_profile(db, user.user_id, encrypted_email)
+    # 5. 유저 생성
+    user = crud_user.create_user(db, user_data)
 
-    # 6. 응답 반환
-    return UserResponse(
-        user_id=user.user_id,
-        email=user_data.email,
-        nickname=user.nickname,
-        is_active=user.is_active
-    )
+    return user
 
 # ✅ 로그인 API
 @router.post("/api/login")
-def login(user_data: UserLogin, db: Session = Depends(get_db)):  # ✅ 모델 변경
-    # 1. 이메일 암호화
+def login(user_data: UserLogin, db: Session = Depends(get_db)):
     encrypted_email = security.aes_encrypt(user_data.email)
-
-    # 2. 사용자 조회 및 비밀번호 검증
     user = crud_user.get_user_by_email(db, encrypted_email)
     if not user or not security.verify_password(user_data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid email or password.")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # 3. JWT 토큰 생성
-    access_token = token.create_access_token(data={"user_id": user.user_id})
-    refresh_token = token.create_refresh_token(data={"user_id": user.user_id})
+    access_token = token.create_access_token(data={"sub": str(user.user_id)})
+    refresh_token = token.create_refresh_token(data={"sub": str(user.user_id)})
 
-    # 4. 토큰 반환
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
+    return {"access_token": access_token, "refresh_token": refresh_token}
+
+# ✅ 사용자 탈퇴 API (탈퇴 로그 저장 포함)
+@router.delete("/api/users/me")
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    deletion_reason: Optional[str] = Body(None),       # ✅ 탈퇴 사유 (선택 입력)
+    last_company: Optional[str] = Body(None)           # ✅ 마지막 소속 회사 (선택 입력)
+):
+    # ✅ 탈퇴 로그 저장
+    log = UserDeletionLog(
+        user_id=current_user.user_id,
+        deleted_at=datetime.utcnow(),
+        reason=deletion_reason,
+        last_company=last_company
+    )
+    db.add(log)
+
+    # ✅ 실제 계정 비활성화 처리
+    current_user.is_active = False
+    db.commit()
+
+    return {"message": "Your account has been deactivated and deletion has been logged."}

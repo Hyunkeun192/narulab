@@ -2,21 +2,13 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database.database import SessionLocal
+from database.database import SessionLocal, get_db
 from models.verification_code import VerificationCode
 from schemas.verification import VerificationRequest, VerificationConfirm
 import random
 from datetime import datetime, timedelta
 
 router = APIRouter()
-
-# ✅ DB 세션 의존성
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # ✅ 인증번호 요청 API
 @router.post("/api/verify/request")

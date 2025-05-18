@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from uuid import UUID, uuid4
+from uuid import uuid4
 from typing import List, Any
 
-from database import get_db
+from database.database import get_db
 from models.scoring_rule import ScoringRule
 from schemas.test_scoring_rule import (
     ScoringRuleCreateRequest,
@@ -33,7 +33,7 @@ def create_scoring_rule(
     db: Session = Depends(get_db)
 ):
     rule = ScoringRule(
-        scoring_rule_id=uuid4(),
+        scoring_rule_id=str(uuid4()),
         test_id=request.test_id,
         scoring_key_name=request.scoring_key_name,
         scoring_type=request.scoring_type,
@@ -51,7 +51,7 @@ def create_scoring_rule(
 # ✅ 채점 기준 수정
 @router.put("/{scoring_rule_id}", response_model=ScoringRuleResponse)
 def update_scoring_rule(
-    scoring_rule_id: UUID,
+    scoring_rule_id: str,  # ✅ UUID → str 변경
     request: ScoringRuleUpdateRequest,
     db: Session = Depends(get_db)
 ):
@@ -66,10 +66,10 @@ def update_scoring_rule(
     db.refresh(rule)
     return rule
 
-# ✅ 채점 기준 삭제 (미사용 조건 시만)
+# ✅ 채점 기준 삭제
 @router.delete("/{scoring_rule_id}")
 def delete_scoring_rule(
-    scoring_rule_id: UUID,
+    scoring_rule_id: str,  # ✅ UUID → str 변경
     db: Session = Depends(get_db)
 ):
     rule = db.query(ScoringRule).filter(ScoringRule.scoring_rule_id == scoring_rule_id).first()

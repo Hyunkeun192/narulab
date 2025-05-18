@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database.database import SessionLocal
+from database.database import SessionLocal, get_db
 from models.test import TestTypeEnum  # optional
 from pydantic import BaseModel
 from models.notification import Notification  # 아래 모델 생성 필요
@@ -10,16 +10,6 @@ from typing import List, Any
 from datetime import datetime
 
 router = APIRouter()
-
-
-# ✅ DB 세션 의존성
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 # ✅ 알림 응답 스키마
 class NotificationSchema(BaseModel):

@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database.database import SessionLocal
+from database.database import SessionLocal, get_db
 from models.test import Report, Test
 from typing import List, Any
 from pydantic import BaseModel
@@ -16,16 +16,6 @@ import os
 from core.config import settings
 
 router = APIRouter()
-
-
-# ✅ DB 세션 의존성
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 # ✅ 리포트 요약 응답 스키마
 class ReportSummary(BaseModel):

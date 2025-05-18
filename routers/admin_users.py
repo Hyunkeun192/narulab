@@ -1,14 +1,14 @@
 # app/routers/admin_users.py
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional, Any
+from typing import List, Optional
 from sqlalchemy import or_
 
-from database import get_db
+from database.database import get_db
 from models.user import User
-from schemas.user_admin import UserListItem
-from dependencies.admin_auth import get_current_admin_user
+from schemas.user_admin import UserListItem, AdminRoleUpdateRequest  # ✅ 역할 변경 요청 스키마 포함
+from dependencies.admin_auth import get_current_admin_user  # ✅ 인증 의존성 (슈퍼 관리자 포함)
 
 # 관리자 사용자 관리 라우터
 router = APIRouter(
@@ -39,7 +39,8 @@ def get_user_list(
 
     return query.order_by(User.created_at.desc()).all()
 
-# ✅ 관리자 계정 추가 API
+# ❌ 사용하지 않는 관리자 생성 API는 현재 스키마 없음으로 인해 주석 처리
+"""
 @router.post("/")
 def create_admin_user(
     request: AdminUserCreateRequest,
@@ -61,6 +62,7 @@ def create_admin_user(
     db.commit()
 
     return {"message": "관리자 계정이 생성되었습니다."}
+"""
 
 # ✅ 관리자 계정 비활성화 API
 @router.delete("/{user_id}")
@@ -82,20 +84,22 @@ def deactivate_admin_user(user_id: str, db: Session = Depends(get_db)):
 @router.put("/{user_id}/role")
 def update_admin_role(
     user_id: str,
-    request: AdminRoleUpdateRequest,
+    request: AdminRoleUpdateRequest,  # {"role": "manager"} 또는 "viewer", "super"
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin_user)
 ):
-    # 현재 요청자가 슈퍼 관리자인지 확인
+    # ✅ 현재 요청자가 슈퍼 관리자인지 확인
     if current_admin.role != "super":
         raise HTTPException(status_code=403, detail="슈퍼 관리자만 역할 변경이 가능합니다.")
 
+    # ✅ 대상 사용자 조회
     user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     if not user.is_admin:
         raise HTTPException(status_code=400, detail="해당 사용자는 관리자 계정이 아닙니다.")
 
+    # ✅ 역할 변경
     user.role = request.role
     db.commit()
 

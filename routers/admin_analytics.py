@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List, Any
 
-from app.database import get_db
-from app.schemas.test_analytics import (
+from database.database import get_db
+from schemas.test_analytics import (
     TestAnalyticsSummary,
     TestAnalyticsDetail,
     QuestionAnalytics,
@@ -13,7 +13,7 @@ from app.schemas.test_analytics import (
 )
 
 # ✅ 관리자 인증 의존성 import
-from app.dependencies.admin_auth import get_current_admin_user
+from dependencies.admin_auth import get_current_admin_user
 
 # 관리자 통계 조회 라우터
 router = APIRouter(

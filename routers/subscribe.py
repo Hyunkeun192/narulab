@@ -2,20 +2,10 @@
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from database.database import SessionLocal
+from database.database import SessionLocal, get_db
 from pydantic import BaseModel
 
 router = APIRouter()
-
-
-# ✅ DB 세션 의존성
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 # ✅ 구독 응답 스키마
 class SubscribeStatus(BaseModel):

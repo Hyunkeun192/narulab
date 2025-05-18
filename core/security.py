@@ -8,6 +8,12 @@ import os
 
 from core.config import settings
 
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from sqlalchemy.orm import Session
+from database.database import get_db
+from models.user import User
 
 # 🔐 bcrypt를 활용한 비밀번호 해시 및 검증을 위한 설정
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,38 +35,46 @@ AES_KEY = settings.AES_SECRET_KEY[:32].encode()  # ✅ AES 전용 키 사용
 AES_IV = AES_KEY[:16]  # CBC 모드 초기화 벡터 (보통 고정값 사용 가능)
 
 
-# ✅ 문자열을 AES256으로 암호화
+# ✅ AES256 CBC 모드 기반 암호화
 def aes_encrypt(plain_text: str) -> str:
     backend = default_backend()
     cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=backend)
     encryptor = cipher.encryptor()
-
-    # AES는 16바이트 블록 단위 → 패딩 필요
-    padded_data = _pad(plain_text.encode(), 16)
+    padded_data = plain_text.encode() + b"\0" * (16 - len(plain_text.encode()) % 16)
     encrypted = encryptor.update(padded_data) + encryptor.finalize()
-
-    # base64 인코딩해서 저장/전송에 적합한 형태로 변환
     return base64.b64encode(encrypted).decode()
 
 
-# ✅ AES256으로 복호화
-def aes_decrypt(encoded_text: str) -> str:
+# ✅ 복호화 함수
+def aes_decrypt(encrypted_text: str) -> str:
     backend = default_backend()
     cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=backend)
     decryptor = cipher.decryptor()
-
-    decoded_data = base64.b64decode(encoded_text)
-    decrypted = decryptor.update(decoded_data) + decryptor.finalize()
-    return _unpad(decrypted).decode()
+    decrypted = decryptor.update(base64.b64decode(encrypted_text)) + decryptor.finalize()
+    return decrypted.rstrip(b"\0").decode()
 
 
-# 🔧 블록 단위 맞춤을 위한 패딩 함수
-def _pad(data: bytes, block_size: int) -> bytes:
-    pad_len = block_size - len(data) % block_size
-    return data + bytes([pad_len] * pad_len)
+# ✅ 현재 로그인된 사용자 정보 가져오기 (JWT 기반)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")  # 🔑 토큰 경로 설정
 
+SECRET_KEY = settings.JWT_SECRET_KEY
+ALGORITHM = "HS256"
 
-# 🔧 패딩 제거 함수
-def _unpad(data: bytes) -> bytes:
-    pad_len = data[-1]
-    return data[:-pad_len]
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    """
+    JWT access token을 기반으로 현재 로그인된 사용자 정보를 반환합니다.
+    유효하지 않거나 비활성화된 사용자는 예외 처리합니다.
+    """
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="Inactive user")
+
+    return user

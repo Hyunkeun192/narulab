@@ -35,8 +35,8 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     if existing_phone:
         raise HTTPException(status_code=400, detail="Phone number already exists.")
 
-    # 5. 유저 생성
-    user = crud_user.create_user(db, user_data)
+    # 5. 유저 생성 - 암호화된 이메일과 전화번호를 전달
+    user = crud_user.create_user(db, user_data, encrypted_email, encrypted_phone)
 
     return user
 

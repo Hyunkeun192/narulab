@@ -12,7 +12,7 @@ from backend.models.user_deletion_log import UserDeletionLog  # ✅ 사용자 �
 from backend.models.test_analytics_by_group import TestAnalyticsByGroup
 from backend.models.question_stats_by_group import QuestionStatsByGroup
 
-import models  # ✅ __init__.py에서 모든 모델 import되어 있어야 함
+from backend import models  # ✅ __init__.py에서 모든 모델 import되어 있어야 함
 
 print("📦 Creating all tables in the database...")
 Base.metadata.create_all(bind=engine)

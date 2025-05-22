@@ -25,6 +25,9 @@ class User(Base):
 
     profile = relationship("UserProfile", back_populates="user", uselist=False)
 
+    # ✅ 공지사항(Notice) 작성자와의 관계 추가
+    notices = relationship("Notice", back_populates="creator")
+
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"

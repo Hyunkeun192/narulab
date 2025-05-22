@@ -8,10 +8,10 @@ export default function Home() {
         <div className="min-h-screen bg-white text-gray-900 font-sans">
             {/* Header */}
             <header className="flex items-center justify-between px-8 py-4 border-b border-gray-200">
-                <div className="text-xl font-bold">narulab</div>
+                <Link to="/" className="text-xl font-bold">narulab</Link>
                 <nav className="hidden md:flex space-x-8 text-sm font-medium">
                     <Link to="/notice" className="hover:text-blue-500">Notice</Link> {/* ✅ 수정된 부분 */}
-                    <a href="#product" className="hover:text-blue-500">Product</a>
+                    <Link to="/product" className="hover:text-blue-500">Product</Link>
                     <a href="#qna" className="hover:text-blue-500">QnA</a>
                     <a href="#contact" className="hover:text-blue-500">Contact</a>
                 </nav>

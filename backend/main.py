@@ -21,6 +21,8 @@ from backend.routers import verification  # [경로 수정]
 from backend.routers import admin_users  # [경로 수정]
 from backend.routers import admin_ai_analysis  # [경로 수정]
 from backend.routers import admin_group_analytics  # ✅ 추가 [경로 수정]
+from backend.routers import notice
+
 
 app = FastAPI(
     title="Narulab API",
@@ -48,6 +50,8 @@ app.include_router(verification.router)
 app.include_router(admin_users.router)
 app.include_router(admin_ai_analysis.router)
 app.include_router(admin_group_analytics.router)
+app.include_router(notice.router)
+
 
 # ✅ 루트 경로 확인용
 @app.get("/")

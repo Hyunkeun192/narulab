@@ -1,6 +1,6 @@
 # app/routers/user.py
 
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Query  # ✅ Query import 추가
 from sqlalchemy.orm import Session
 from backend.schemas.user import UserCreate, UserResponse, UserLogin  # ✅ 로그인 모델 추가 import
 from backend.crud import user as crud_user
@@ -21,11 +21,11 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     if user_data.password != user_data.password_confirm:
         raise HTTPException(status_code=400, detail="Passwords do not match.")
 
-    # 2. 이메일, 전화번호 암호화
+    # ✅ 2. 이메일, 전화번호 암호화
     encrypted_email = security.aes_encrypt(user_data.email)
     encrypted_phone = security.aes_encrypt(user_data.phone_number)
 
-    # 3. 중복 확인 (이메일)
+    # ✅ 3. 중복 확인 (이메일)
     existing_user = crud_user.get_user_by_email(db, encrypted_email)
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already exists.")
@@ -35,9 +35,8 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     if existing_phone:
         raise HTTPException(status_code=400, detail="Phone number already exists.")
 
-    # 5. 유저 생성 - 암호화된 이메일과 전화번호를 전달
+    # ✅ 5. 유저 생성
     user = crud_user.create_user(db, user_data, encrypted_email, encrypted_phone)
-
     return user
 
 # ✅ 로그인 API
@@ -75,3 +74,17 @@ def delete_account(
     db.commit()
 
     return {"message": "Your account has been deactivated and deletion has been logged."}
+
+# ✅ 이메일 중복 확인 API (프론트 회원가입 시 사용)
+@router.get("/api/users/check-email")
+def check_email_duplicate(
+    email: str = Query(..., description="중복 확인할 이메일 주소"),
+    db: Session = Depends(get_db)
+):
+    """
+    사용자가 입력한 이메일이 DB에 존재하는지 암호화된 상태로 확인합니다.
+    반환 형식: { "available": true } 또는 { "available": false }
+    """
+    encrypted_email = security.aes_encrypt(email)
+    user = crud_user.get_user_by_email(db, encrypted_email)
+    return {"available": user is None}

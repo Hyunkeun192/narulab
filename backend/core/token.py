@@ -13,7 +13,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 # ✅ 액세스 토큰 생성
 def create_access_token(data: dict):
     to_encode = data.copy()
-    to_encode["sub"] = data.get("user_id")  # ✅ FastAPI 인증 의존성과 호환되도록 추가
+    to_encode["sub"] = data.get("sub")  # ✅ 핵심 수정!
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

@@ -1,4 +1,3 @@
-# schemas/notice.py
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -9,10 +8,13 @@ class NoticeBase(BaseModel):
 class NoticeCreate(NoticeBase):
     pass
 
+class NoticeUpdate(NoticeBase):
+    pass
+
 class NoticeOut(NoticeBase):
-    id: int
+    id: str
     created_at: datetime
-    created_by: int
+    created_by: str
 
     class Config:
         orm_mode = True

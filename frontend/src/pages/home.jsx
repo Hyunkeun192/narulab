@@ -6,20 +6,6 @@ import { Link } from "react-router-dom"; // ✅ Link 추가
 export default function Home() {
     return (
         <div className="min-h-screen bg-white text-gray-900 font-sans">
-            {/* Header */}
-            <header className="flex items-center justify-between px-8 py-4 border-b border-gray-200">
-                <Link to="/" className="text-xl font-bold">narulab</Link>
-                <nav className="hidden md:flex space-x-8 text-sm font-medium">
-                    <Link to="/notice" className="hover:text-blue-500">Notice</Link> {/* ✅ 수정된 부분 */}
-                    <Link to="/product" className="hover:text-blue-500">Product</Link>
-                    <a href="#qna" className="hover:text-blue-500">QnA</a>
-                    <a href="#contact" className="hover:text-blue-500">Contact</a>
-                </nav>
-                <div className="space-x-4 text-sm">
-                    <a href="/login" className="hover:text-blue-500">Login</a>
-                    <a href="/signup" className="text-white bg-blue-500 px-4 py-1.5 rounded-full hover:bg-blue-600">Sign up</a>
-                </div>
-            </header>
 
             {/* Hero Section */}
             <main className="flex flex-col items-center justify-center text-center px-4 py-24">

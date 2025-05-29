@@ -19,13 +19,13 @@ class UserLogin(BaseModel):
 # 사용자 응답용 (기본 정보)
 class UserResponse(BaseModel):
     user_id: str
-    email: EmailStr
     nickname: str
     is_active: bool
 
     class Config:
         orm_mode = True
 
+        
 # 사용자 프로필 정보
 class UserProfileSchema(BaseModel):
     email: EmailStr

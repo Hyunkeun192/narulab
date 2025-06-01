@@ -1,6 +1,6 @@
 // src/pages/signup.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react"; // ✅ useRef 추가
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion"; // ✅ motion 애니메이션 효과
@@ -25,8 +25,8 @@ export default function SignupPage() {
         return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
     };
 
-    // ✅ 회원가입 단계 (1~4)
-    const [step, setStep] = useState(1);
+    // ✅ 회원가입 단계 (0~4)
+    const [step, setStep] = useState(0);
     const [email, setEmail] = useState("");
     const [emailValid, setEmailValid] = useState(false);
     const [emailExists, setEmailExists] = useState(false);
@@ -40,6 +40,9 @@ export default function SignupPage() {
     const [nicknameExists, setNicknameExists] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [agreed, setAgreed] = useState(false); // ✅ 스크롤 동의 여부
+    const [agreedOptional, setAgreedOptional] = useState(false); // 선택 동의 여부
+
 
     useEffect(() => {
         setNicknameCandidates(generateNicknames());
@@ -108,6 +111,15 @@ export default function SignupPage() {
         return () => clearTimeout(timer);
     }, [phoneNumber]);
 
+    // ✅ 스크롤 참조 및 이벤트 처리
+    const scrollRef = useRef(null);
+    const handleScroll = () => {
+        const el = scrollRef.current;
+        if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 5) {
+            setAgreed(true);
+        }
+    };
+
     const goToNextStep = () => {
         if (step === 1 && emailValid && !emailExists) setStep(2);
         else if (step === 2 && isPasswordValid()) setStep(3);
@@ -158,6 +170,75 @@ export default function SignupPage() {
         >
             <div className="flex-1 flex items-center justify-center px-4">
                 <div className="w-full max-w-md bg-gray-50 rounded-md p-8">
+
+                    {/* ✅ Step 0: 개인정보 수집 및 이용 동의 */}
+                    {step === 0 && (
+                        <div>
+                            <h2 className="text-2xl font-normal text-center mb-6">개인정보 수집 및 이용 동의</h2>
+                            {/* 개인정보 수집 동의서 */}
+                            <div className="h-64 overflow-y-auto border p-4 text-sm text-gray-700 bg-white rounded mb-4">
+                                <p className="mb-2">
+                                    'narulab' 서비스는 취업 준비생 여러분께 개인 맞춤형 인적성 검사 보고서를 제공하고, 더 나아가 유의미한 통계 분석 자료를 제공하여 서비스 품질을 향상하기 위해 다음과 같은 개인정보를 수집 및 이용합니다.
+                                </p>
+                                <strong className="block mt-2 mb-1">1. 수집하는 개인정보 항목</strong>
+                                <ul className="list-disc list-inside mb-2">
+                                    <li>필수 정보: 이메일 주소, 휴대폰 번호, 비밀번호</li>
+                                    <li>선택 정보: 소속 학교, 취업 희망 회사, 선호 지역</li>
+                                </ul>
+                                <strong className="block mt-2 mb-1">2. 개인정보 수집 및 이용 목적</strong>
+                                <ul className="list-disc list-inside mb-2">
+                                    <li>
+                                        <b>필수 정보</b>: 회원 식별, 본인 확인, 서비스 이용 및 관리, 인적성 검사 결과 보고서 제공, 안내 및 불만 처리 등
+                                    </li>
+                                    <li>
+                                        <b>선택 정보</b>: 맞춤형 보고서 내 비교 통계, 서비스 개선을 위한 비식별 통계 분석
+                                    </li>
+                                </ul>
+                                <strong className="block mt-2 mb-1">3. 개인정보의 보유 및 이용 기간</strong>
+                                <p className="mb-2">
+                                    회원님의 개인정보는 회원 탈퇴 시 또는 개인정보 수집 및 이용 목적이 달성된 후에는 지체 없이 파기됩니다. 단, 관련 법령의 규정에 따라 일정 기간 보존될 수 있습니다.
+                                </p>
+                                <strong className="block mt-2 mb-1">4. 선택 정보 제공에 대한 안내</strong>
+                                <p>
+                                    선택 정보를 제공하지 않으셔도 서비스 가입 및 인적성 검사 이용이 가능합니다. 다만 일부 비교 분석 기능 이용에 제한이 있을 수 있습니다.
+                                </p>
+                            </div>
+                            {/* 필수/선택 동의 체크박스 */}
+                            <div className="mb-4">
+                                <label className="flex items-center mb-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={agreed}
+                                        onChange={(e) => setAgreed(e.target.checked)}
+                                        className="mr-2 accent-blue-600"
+                                        required
+                                    />
+                                    <span className="text-sm text-gray-900">
+                                        개인정보 수집 및 이용에 동의합니다 <span className="text-red-500">(필수)</span>
+                                    </span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!agreedOptional}
+                                        onChange={(e) => setAgreedOptional(e.target.checked)}
+                                        className="mr-2 accent-blue-600"
+                                    />
+                                    <span className="text-sm text-gray-900">
+                                        맞춤형 통계 분석(소속/희망회사/지역 제공)에 동의합니다 <span className="text-gray-400">(선택)</span>
+                                    </span>
+                                </label>
+                            </div>
+                            {/* 필수 동의 시에만 버튼 활성화 */}
+                            <button
+                                onClick={() => setStep(1)}
+                                disabled={!agreed}
+                                className="w-full mt-2 bg-[#007AFF] text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                            >
+                                다음
+                            </button>
+                        </div>
+                    )}
 
                     {/* ✅ Step 1: 이메일 입력 */}
                     {step === 1 && (

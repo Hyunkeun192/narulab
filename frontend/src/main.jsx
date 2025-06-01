@@ -13,6 +13,7 @@ import QnAPage from "./pages/qna";
 import ContactPage from "./pages/contact";
 import LoginPage from "./pages/login";
 import SignupPage from "./pages/signup";
+import ForgotPassword from "./pages/ForgotPassword"; // ✅ 추가: 비밀번호 찾기 페이지
 import NotFound from "./pages/NotFound"; // ✅ 404 페이지
 
 // ✅ 공통 레이아웃 import
@@ -29,6 +30,7 @@ const routes = [
   { path: "/contact", element: <ContactPage /> },
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
+  { path: "/forgot-password", element: <ForgotPassword /> }, // ✅ 추가된 경로
   { path: "*", element: <NotFound /> }, // ✅ 없는 경로 처리
 ];
 

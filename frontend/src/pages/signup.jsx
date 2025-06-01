@@ -1,9 +1,11 @@
+// src/pages/signup.jsx
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion"; // ✅ motion 애니메이션 효과
 
-// ✅ 랜덤 닉네임 생성 함수
+// ✅ 랜덤 닉네임 4개 생성 함수
 const generateNicknames = () => {
     const animals = ["호랑이", "펭귄", "여우", "토끼", "사자", "고양이", "부엉이", "하마"];
     return Array.from({ length: 4 }, () => {
@@ -16,7 +18,6 @@ const generateNicknames = () => {
 export default function SignupPage() {
     const navigate = useNavigate();
 
-    // ✅ 휴대폰 번호 하이픈 자동 삽입 함수
     const formatPhoneNumber = (value) => {
         const digits = value.replace(/\D/g, "");
         if (digits.length < 4) return digits;
@@ -24,39 +25,33 @@ export default function SignupPage() {
         return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
     };
 
-    // ✅ 단계 상태
+    // ✅ 회원가입 단계 (1~4)
     const [step, setStep] = useState(1);
-
-    // ✅ 입력 상태
     const [email, setEmail] = useState("");
     const [emailValid, setEmailValid] = useState(false);
     const [emailExists, setEmailExists] = useState(false);
-
     const [password, setPassword] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
-
     const [phoneNumber, setPhoneNumber] = useState("");
-
+    const [phoneExists, setPhoneExists] = useState(false);
     const [nickname, setNickname] = useState("");
     const [nicknameCandidates, setNicknameCandidates] = useState([]);
     const [selectedNickname, setSelectedNickname] = useState("");
     const [nicknameExists, setNicknameExists] = useState(false);
-
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // ✅ 진입 시 닉네임 후보 생성
     useEffect(() => {
         setNicknameCandidates(generateNicknames());
     }, []);
 
-    // ✅ 이메일 유효성 검사
     const validateEmail = (value) =>
         /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value);
+
     const isPasswordValid = () =>
         password.length >= 8 && password === passwordConfirm;
 
-    // ✅ 이메일 중복 체크
+    // ✅ 이메일 중복 확인 요청
     const checkEmailDuplicate = async () => {
         if (!validateEmail(email)) {
             setEmailValid(false);
@@ -73,7 +68,17 @@ export default function SignupPage() {
         }
     };
 
-    // ✅ 닉네임 중복 체크
+    // ✅ 전화번호 중복 확인 요청 함수
+    const checkPhoneNumberDuplicate = async (value) => {
+        try {
+            const res = await axios.get(`/api/users/check-phone?phone=${value}`);
+            setPhoneExists(!res.data.available);
+        } catch {
+            setPhoneExists(false);
+        }
+    };
+
+    // ✅ 닉네임 중복 확인 요청 함수
     const checkNicknameDuplicate = async (value) => {
         try {
             const res = await axios.get(`/api/users/check-nickname?nickname=${value}`);
@@ -83,14 +88,33 @@ export default function SignupPage() {
         }
     };
 
-    // ✅ 단계 이동
+    // ✅ 닉네임 중복 확인 디바운스 (0.5초)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (nickname.length > 1) {
+                checkNicknameDuplicate(nickname);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [nickname]);
+
+    // ✅ 전화번호 중복 확인 디바운스 (0.5초)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (phoneNumber.length >= 10) {
+                checkPhoneNumberDuplicate(phoneNumber);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [phoneNumber]);
+
     const goToNextStep = () => {
         if (step === 1 && emailValid && !emailExists) setStep(2);
         else if (step === 2 && isPasswordValid()) setStep(3);
-        else if (step === 3 && phoneNumber) setStep(4);
+        else if (step === 3 && phoneNumber && !phoneExists) setStep(4);
     };
 
-    // ✅ 최종 제출
+    // ✅ 최종 회원가입 제출 함수
     const handleSubmit = async () => {
         setLoading(true);
         setError("");
@@ -111,215 +135,172 @@ export default function SignupPage() {
                 nickname: finalNickname,
             });
             navigate("/login");
-        } catch {
-            setError("회원가입에 실패했습니다.");
+        } catch (err) {
+            const serverMessage = err.response?.data?.detail;
+            if (serverMessage) {
+                setError(serverMessage);
+            } else {
+                setError("회원가입에 실패했습니다.");
+            }
         } finally {
             setLoading(false);
         }
     };
 
+    // ✅ 전체 signup UI 렌더링
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4"
+            className="min-h-screen text-gray-900 flex flex-col"
         >
-            <div className="w-full max-w-xl bg-white rounded-2xl shadow p-10">
-                
-                {/* ✅ 1단계: 이메일 입력 */}
-                {step === 1 && (
-                    <div>
-                        {/* ✅ 제목 + 입력 영역 */}
-                            <h2 className="text-xl font-normal text-center">이메일을 입력해주세요.</h2>
-                            {/* ✅ 이메일 입력 필드 */}
+            <div className="flex-1 flex items-center justify-center px-4">
+                <div className="w-full max-w-md bg-gray-50 rounded-md p-8">
 
-                        <div className="mt-12">
+                    {/* ✅ Step 1: 이메일 입력 */}
+                    {step === 1 && (
+                        <div>
+                            <h2 className="text-2xl font-normal text-center mb-16">Email address</h2>
                             <input
                                 type="email"
-                                placeholder="이메일 입력"
+                                placeholder="Email"
                                 value={email}
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     setEmail(value);
                                     setEmailValid(false);
                                     setEmailExists(false);
-
-                                    // ✅ 입력 도중에도 유효하면 자동 중복 확인
-                                    if (validateEmail(value)) {
-                                        checkEmailDuplicate(value);
-                                    }
+                                    if (validateEmail(value)) checkEmailDuplicate(value);
                                 }}
-                                className="w-full px-0 py-4 border-b border-gray-400 bg-transparent text-lg focus:outline-none focus:border-blue-500 transition-all"
+                                className="w-full px-4 py-2 border border-[#CCCCCC] rounded-lg text-sm"
                             />
-
-                            {/* ✅ 피드백 메시지 */}
-                            {!validateEmail(email) && email && (
-                                <p className="text-sm text-red-500">올바른 이메일 형식이 아닙니다.</p>
+                            {email && !validateEmail(email) && (
+                                <p className="text-sm text-red-500 mt-2">올바른 이메일 형식이 아닙니다.</p>
                             )}
                             {emailValid && !emailExists && (
-                                <p className="text-sm text-green-600">사용 가능한 이메일입니다.</p>
+                                <p className="text-sm text-green-600 mt-2">사용 가능한 이메일입니다.</p>
                             )}
                             {emailExists && (
-                                <p className="text-sm text-red-500">이미 사용 중입니다.</p>
+                                <p className="text-sm text-red-500 mt-2">이미 사용 중입니다.</p>
                             )}
-                        </div>
-
-                        {/* ✅ 다음 버튼 */}
-                        <div className="mt-12 flex justify-end">
                             <button
                                 onClick={goToNextStep}
                                 disabled={!validateEmail(email) || emailExists}
-                                className="bg-[#007AFF] text-white px-6 py-1.5 text-sm rounded-md hover:bg-blue-600 disabled:opacity-50"
+                                className="w-full mt-8 bg-[#007AFF] text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
                             >
                                 다음
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* ✅ 2단계: 비밀번호 입력 */}
-                {step === 2 && (
-                    <div>
-                        
-                            <h2 className="text-xl font-normal text-center">비밀번호를 입력해주세요.</h2>
-                        <div className="mt-12">
+                    {/* ✅ Step 2: 비밀번호 입력 */}
+                    {step === 2 && (
+                        <div>
+                            <h2 className="text-2xl font-normal text-center mb-16">비밀번호 설정</h2>
                             <input
                                 type="password"
                                 placeholder="비밀번호 (8자 이상)"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-0 py-4 border-b border-gray-400 bg-transparent text-lg focus:outline-none focus:border-blue-500 transition-all"
+                                className="w-full px-4 py-2 border border-[#CCCCCC] rounded-lg text-sm"
                             />
                             <input
                                 type="password"
                                 placeholder="비밀번호 확인"
                                 value={passwordConfirm}
                                 onChange={(e) => setPasswordConfirm(e.target.value)}
-                                className="w-full px-0 py-4 border-b border-gray-400 bg-transparent text-lg focus:outline-none focus:border-blue-500 transition-all"
+                                className="w-full mt-3 px-4 py-2 border border-[#CCCCCC] rounded-lg text-sm"
                             />
                             {password && password.length < 8 && (
-                                <p className="text-sm text-red-500">8자 이상 입력해주세요.</p>
+                                <p className="text-sm text-red-500 mt-2">8자 이상 입력해주세요.</p>
                             )}
-                            {password && passwordConfirm && password !== passwordConfirm && (
-                                <p className="text-sm text-red-500">비밀번호가 일치하지 않습니다.</p>
+                            {passwordConfirm && password !== passwordConfirm && (
+                                <p className="text-sm text-red-500 mt-2">비밀번호가 일치하지 않습니다.</p>
                             )}
-                            {isPasswordValid() && (
-                                <p className="text-sm text-green-600">비밀번호가 유효합니다.</p>
-                            )}
-                        </div>
-
-                        <div className="mt-12 flex justify-end">
                             <button
                                 onClick={goToNextStep}
                                 disabled={!isPasswordValid()}
-                                className="bg-[#007AFF] text-white px-6 py-1.5 text-sm rounded-md hover:bg-blue-600 disabled:opacity-50"
+                                className="w-full mt-8 bg-[#007AFF] text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
                             >
                                 다음
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* ✅ 3단계: 휴대폰 번호 입력 */}
-                {step === 3 && (
-                    <div>
-                            <h2 className="text-xl font-normal text-center">휴대폰 번호를 입력해주세요.</h2>
-                        <div className="mt-12">
+                    {/* ✅ Step 3: 전화번호 입력 */}
+                    {step === 3 && (
+                        <div>
+                            <h2 className="text-2xl font-normal text-center mb-16">휴대폰 번호</h2>
                             <input
                                 type="text"
-                                placeholder="휴대폰 번호 입력"
+                                placeholder="휴대폰 번호"
                                 value={formatPhoneNumber(phoneNumber)}
-                                onChange={(e) =>
-                                    setPhoneNumber(e.target.value.replace(/\D/g, ""))
-                                }
-                                className="w-full px-0 py-4 border-b border-gray-400 bg-transparent text-lg focus:outline-none focus:border-blue-500 transition-all"
+                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                                className="w-full px-4 py-2 border border-[#CCCCCC] rounded-lg text-sm"
                             />
-                        </div>
-
-                        <div className="mt-12 flex justify-end">
+                            {phoneExists && (
+                                <p className="text-sm text-red-500 mt-2">이미 사용 중인 번호입니다.</p>
+                            )}
                             <button
                                 onClick={goToNextStep}
-                                disabled={!phoneNumber}
-                                className="bg-[#007AFF] text-white px-6 py-1.5 text-sm rounded-md hover:bg-blue-600 disabled:opacity-50"
+                                disabled={!phoneNumber || phoneExists}
+                                className="w-full mt-8 bg-[#007AFF] text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
                             >
                                 다음
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* ✅ 4단계: 닉네임 선택 */}
-                {step === 4 && (
-                    <div>
-                            {/* ✅ 제목 */}
-                            <h2 className="text-xl font-normal text-center">
-                                닉네임을 선택해주세요. <span className="text-gray-400 text-base">(선택)</span>
-                            </h2>
-                        <div className="mt-12">
-                        
-                            {/* ✅ 추천 닉네임: 제목과 여유 있는 간격 확보 */}
-                            <div className="mt-10 grid grid-cols-2 gap-2">
+                    {/* ✅ Step 4: 닉네임 입력 */}
+                    {step === 4 && (
+                        <div>
+                            <h2 className="text-2xl font-normal text-center mb-16">닉네임 선택</h2>
+                            <div className="grid grid-cols-2 gap-2 mb-16">
                                 {nicknameCandidates.map((name) => (
                                     <button
                                         key={name}
-                                        type="button"
                                         onClick={() => {
-                                            setSelectedNickname(name); // 선택 상태로
-                                            setNickname(name);         // 입력창에 자동 반영
-                                            setNicknameExists(false);  // 에러 제거
-                                            setError("");              // 기타 에러 제거
+                                            setSelectedNickname(name);
+                                            setNickname(name);
+                                            setNicknameExists(false);
+                                            setError("");
                                         }}
-                                        className={`border px-3 py-1 rounded-full text-sm ${selectedNickname === name
-                                                ? "border-blue-500 text-blue-600"
-                                                : "border-gray-300"
+                                        className={`border px-3 py-1 rounded-lg text-sm ${selectedNickname === name
+                                                ? "bg-blue-100 border-blue-500 text-blue-600"
+                                                : "bg-white border-gray-300"
                                             }`}
                                     >
                                         {name}
                                     </button>
                                 ))}
                             </div>
-
-                            {/* ✅ 직접 입력 */}
-                        <div className="mt-12">
                             <input
                                 type="text"
                                 placeholder="직접 입력"
                                 value={nickname}
                                 onChange={(e) => {
                                     setNickname(e.target.value);
-                                    setSelectedNickname(""); // 추천 선택 해제
-                                    checkNicknameDuplicate(e.target.value); // 중복 검사만 직접 입력 시 실행
+                                    setSelectedNickname("");
                                 }}
-                                className="w-full px-0 py-4 border-b border-gray-400 bg-transparent text-lg focus:outline-none focus:border-blue-500 transition-all"
+                                className="w-full px-4 py-2 border border-[#CCCCCC] rounded-lg text-sm"
                             />
-
-                            {/* ✅ 메시지 영역 */}
                             {nicknameExists && (
-                                <p className="text-sm text-red-500">이미 사용 중입니다.</p>
+                                <p className="text-sm text-red-500 mt-2">이미 사용 중입니다.</p>
                             )}
-                            {error && <p className="text-sm text-red-500">{error}</p>}
-                        </div>
-                    </div>
-
-                        {/* ✅ 버튼 영역 */}
-                        <div className="mt-12 flex justify-end">
+                            {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
                             <button
                                 onClick={handleSubmit}
-                                disabled={
-                                    loading ||
-                                    (!nickname && !selectedNickname) ||
-                                    nicknameExists
-                                }
-                                className="bg-[#007AFF] text-white px-6 py-1.5 text-sm rounded-md hover:bg-blue-600 disabled:opacity-50"
+                                disabled={loading || (!nickname && !selectedNickname) || nicknameExists}
+                                className="w-full mt-8 bg-[#007AFF] text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
                             >
                                 {loading ? "가입 중..." : "가입 완료"}
                             </button>
                         </div>
-                    </div>
-                )}
+                    )}
 
+                </div>
             </div>
         </motion.div>
     );

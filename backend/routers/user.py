@@ -35,9 +35,37 @@ def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     if existing_phone:
         raise HTTPException(status_code=400, detail="Phone number already exists.")
 
-    # ✅ 5. 유저 생성
+    # ✅ 5. 닉네임 중복 확인
+    if crud_user.get_user_by_nickname(db, user_data.nickname):
+        raise HTTPException(status_code=400, detail="Nickname already exists.")
+
+    # ✅ 6. 유저 생성
     user = crud_user.create_user(db, user_data, encrypted_email, encrypted_phone)
     return user
+
+# ✅ 닉네임 중복 확인 라우트
+@router.get("/api/users/check-nickname")
+def check_nickname(nickname: str = Query(...), db: Session = Depends(get_db)):
+    """
+    ✅ 닉네임 중복 여부 확인 API
+    - 클라이언트는 닉네임 입력 후 이 API로 사용 가능 여부 확인
+    - 예시 요청: GET /api/users/check-nickname?nickname=하마777
+    - 응답: {"available": true} 또는 {"available": false}
+    """
+    existing_user = crud_user.get_user_by_nickname(db, nickname=nickname)
+    return {"available": existing_user is None}
+
+# ✅ 🔽 [추가] 전화번호 중복 확인 라우트
+@router.get("/api/users/check-phone")
+def check_phone(phone: str = Query(...), db: Session = Depends(get_db)):
+    """
+    ✅ 전화번호 중복 여부 확인 API
+    - 요청 예시: GET /api/users/check-phone?phone=010-1234-5678
+    - 반환값: {"available": true} 또는 {"available": false}
+    """
+    encrypted_phone = security.aes_encrypt(phone)
+    user = crud_user.get_user_by_phone(db, encrypted_phone)
+    return {"available": user is None}
 
 # ✅ 로그인 API
 @router.post("/api/login")
@@ -88,3 +116,13 @@ def check_email_duplicate(
     encrypted_email = security.aes_encrypt(email)
     user = crud_user.get_user_by_email(db, encrypted_email)
     return {"available": user is None}
+
+# ✅ 현재 로그인된 사용자 정보 반환 API
+@router.get("/api/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    """
+    ✅ JWT 토큰을 기반으로 현재 로그인한 사용자의 정보를 반환하는 API입니다.
+    - 요청 예: GET /api/me
+    - 응답: user_id, nickname, is_active 등 포함
+    """
+    return current_user

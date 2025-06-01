@@ -1,11 +1,10 @@
-// ✅ 로그인 페이지 컴포넌트: 사용자 이메일과 비밀번호 입력을 받아 로그인 처리
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion"; // ✅ 페이지 진입/이탈 애니메이션 효과를 위한 모듈
 
 export default function LoginPage() {
-    const navigate = useNavigate(); // ✅ 로그인 성공 시 /mypage로 이동을 위한 라우팅 기능
+    const navigate = useNavigate(); // ✅ 로그인 성공 시 홈으로 이동
 
     // ✅ 상태 관리: 입력값 및 에러/로딩 상태
     const [email, setEmail] = useState("");
@@ -19,16 +18,29 @@ export default function LoginPage() {
         setError("");
 
         try {
-            // ✅ 로그인 요청
-            await axios.post("/api/login", { email, password });
+            const trimmedEmail = email.trim(); // ✅ 공백 제거
 
-            // ✅ 사용자 정보 요청 (로그인 확인 후 사용자 상태 저장 등 추가 가능)
-            await axios.get("/api/me");
+            // ✅ 로그인 요청 → 토큰 수신
+            const res = await axios.post("/api/login", {
+                email: trimmedEmail,
+                password,
+            });
 
-            // ✅ 마이페이지로 이동
-            navigate("/mypage");
+            const token = res.data.access_token;
+
+            // ✅ accessToken 이름으로 토큰 저장 (Header.jsx 기준과 일치)
+            localStorage.setItem("accessToken", token);
+
+            // ✅ 사용자 정보 요청 (/api/me) - 인증 헤더 포함
+            await axios.get("/api/me", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            // ✅ 로그인 성공 → 홈으로 이동
+            navigate("/");
         } catch (err) {
-            // ✅ 로그인 실패 시 오류 메시지 표시
             setError("이메일 또는 비밀번호가 올바르지 않습니다.");
         } finally {
             setLoading(false);
@@ -36,43 +48,37 @@ export default function LoginPage() {
     };
 
     return (
-        // ✅ 페이지 전환 애니메이션 적용
         <motion.div
-            initial={{ opacity: 0, y: 20 }} // 시작 상태: 약간 아래에서 투명
-            animate={{ opacity: 1, y: 0 }}   // 나타날 때: 정위치에서 보이게
-            exit={{ opacity: 0, y: -20 }}    // 사라질 때: 위로 빠져나감
-            transition={{ duration: 0.3 }}   // 전환 시간
-            className="min-h-screen bg-[#FAFAFA] text-gray-900 flex flex-col" // ✅ 전체 배경 설정 + flex로 헤더 + 본문 분리
+            initial={{ opacity: 0, y: 20 }} // ✅ 진입 애니메이션 시작
+            animate={{ opacity: 1, y: 0 }}   // ✅ 도착 상태
+            exit={{ opacity: 0, y: -20 }}    // ✅ 퇴장 애니메이션
+            transition={{ duration: 0.3 }}
+            className="min-h-screen text-gray-900 flex flex-col"
         >
-
-            {/* ✅ 로그인 박스: 화면 정중앙에 정렬 */}
+            {/* ✅ 로그인 박스 */}
             <div className="flex-1 flex items-center justify-center px-4">
-                <div className="w-full max-w-md bg-white border border-gray-200 rounded-md p-8 shadow-sm">
-                    {/* ✅ 로그인 타이틀 */}
-                    <h2 className="text-2xl font-semibold text-center mb-6">로그인</h2>
+                <div className="w-full max-w-md bg-gray-50 rounded-md p-8">
+                    <h2 className="text-2xl font-normal text-center mb-6">Login</h2>
 
-                    {/* ✅ 입력 필드 및 버튼 */}
+                    {/* ✅ 입력 영역 */}
                     <div className="mt-12">
-                        {/* ✅ 이메일 입력 필드 */}
                         <input
                             type="email"
-                            placeholder="이메일"
+                            placeholder="Your email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-2 border border-[#CCCCCC] rounded text-sm"
                         />
-
-                        {/* ✅ 비밀번호 입력 필드 */}
                         <div className="mt-3"></div>
                         <input
                             type="password"
-                            placeholder="비밀번호"
+                            placeholder="Your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-2 border border-[#CCCCCC] rounded text-sm"
                         />
 
-                        {/* ✅ 에러 메시지 표시 */}
+                        {/* ✅ 에러 메시지 */}
                         {error && <p className="text-sm text-red-500">{error}</p>}
 
                         {/* ✅ 로그인 버튼 */}
@@ -85,10 +91,10 @@ export default function LoginPage() {
                             {loading ? "로그인 중..." : "로그인"}
                         </button>
 
-                        {/* ✅ 하단 링크: 비밀번호 찾기 및 회원가입 이동 */}
+                        {/* ✅ 하단 링크 */}
                         <div className="mt-4"></div>
                         <div className="flex justify-between text-sm text-gray-500 pt-2">
-                            <Link to="/find-password" className="text-blue-500 hover:underline">
+                            <Link to="/forgot-password" className="text-blue-500 hover:underline">
                                 비밀번호 찾기
                             </Link>
                             <Link to="/signup" className="text-blue-500 hover:underline">

@@ -36,3 +36,12 @@ def create_user_profile(db: Session, user_id: str, email: str):
     db.commit()
     db.refresh(profile)
     return profile
+
+# ✅ 닉네임 중복 확인 함수
+def get_user_by_nickname(db: Session, nickname: str):
+    """
+    닉네임 중복 여부 확인용 함수
+    - 사용 예: DB에 해당 닉네임이 이미 존재하는지 확인
+    - 반환: 사용자 객체 또는 None
+    """
+    return db.query(User).filter(User.nickname == nickname).first()

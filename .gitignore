@@ -35,3 +35,6 @@ venv/
 Thumbs.db
 Desktop.ini
 *.zip
+
+# macOS 텍스트 클리핑 무시
+*.textClipping

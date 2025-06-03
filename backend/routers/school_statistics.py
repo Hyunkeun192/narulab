@@ -7,7 +7,7 @@ from io import StringIO
 import pandas as pd
 
 from backend.database.database import get_db
-from backend.models.test import Report, Test
+from backend.models.test import TestReport, Test  # ✅ Report 이름 중복 방지를 위해 수정
 from backend.models.user import User
 from backend.models.institution_admin import InstitutionAdmin
 from backend.dependencies.external_admin_auth import get_school_admin_user
@@ -34,13 +34,11 @@ def download_school_user_reports(
         User.is_active == True
     ).all()
 
-    # ✅ 기존 user_id → Report.user_id ❌ 오류 → Report.email로 수정 필요
     user_emails = [u.encrypted_email for u in users]  # ✅ 사용자 email 기준 필터링용
 
-    reports = db.query(Report).filter(Report.email.in_(user_emails)).all()  # ✅ 수정: Report.user_id → Report.email
+    reports = db.query(TestReport).filter(TestReport.email.in_(user_emails)).all()  # ✅ Report → TestReport
     tests = {t.test_id: t.test_name for t in db.query(Test).all()}
 
-    # ✅ 사용자 DF
     user_df = pd.DataFrame([
         {
             "user_id": u.user_id,
@@ -51,17 +49,15 @@ def download_school_user_reports(
         for u in users
     ])
 
-    # ✅ 리포트 DF
     report_rows = []
     for r in reports:
         report_rows.append({
-            "user_id": next((u.user_id for u in users if u.encrypted_email == r.email), "unknown"),  # ✅ 매칭된 user_id 역추적
+            "user_id": next((u.user_id for u in users if u.encrypted_email == r.email), "unknown"),
             f"{tests.get(r.test_id, 'Unknown')}_score": r.score_total,
             f"{tests.get(r.test_id, 'Unknown')}_date": r.report_generated_at.strftime("%Y-%m-%d")
         })
     report_df = pd.DataFrame(report_rows)
 
-    # ✅ 열 병합
     final_df = user_df.copy()
     if not report_df.empty:
         report_wide = report_df.groupby("user_id").first().reset_index()
@@ -71,7 +67,6 @@ def download_school_user_reports(
     final_df.to_csv(buffer, index=False)
     buffer.seek(0)
 
-    # ✅ 수정: 한글 포함된 파일명 제거 → latin-1 인코딩 오류 방지
     return StreamingResponse(
         buffer,
         media_type="text/csv",
@@ -87,27 +82,24 @@ def compare_school_statistics(
 ):
     school_name = current_admin.institution_name
 
-    # ✅ 소속 학교 사용자 조회
     school_users = db.query(User).join(User.profile).filter(
         User.profile.has(school=school_name)
     ).all()
     school_ids = [u.user_id for u in school_users]
 
-    # ✅ 지역 기준 (학교 관리자 등록된 지역을 기준으로 잡음)
     region = school_users[0].profile.region if school_users else None
     region_users = db.query(User).join(User.profile).filter(
         User.profile.has(region=region)
     ).all() if region else []
 
-    # ✅ 전체 사용자 조회
     all_users = db.query(User).all()
 
-    # ✅ 리포트 가져오기
+    # ✅ 리포트 가져오기 함수: Report → TestReport
     def get_scores(user_list):
         uids = [u.user_id for u in user_list]
-        reports = db.query(Report).filter(
-            Report.test_id == test_id,
-            Report.user_id.in_(uids)
+        reports = db.query(TestReport).filter(
+            TestReport.test_id == test_id,
+            TestReport.user_id.in_(uids)
         ).all()
         return [r.score_total for r in reports]
 

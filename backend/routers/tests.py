@@ -3,7 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database.database import get_db
-from backend.models.test import Test, Question, Option, Response, Report
+# ✅ Report → TestReport로 이름 변경하여 중복 오류 해결
+from backend.models.test import Test, Question, Option, Response, TestReport
 from backend.models.test_analytics_by_group import TestAnalyticsByGroup, GroupTypeEnum
 from backend.models.question_stats_by_group import QuestionStatsByGroup
 from backend.models.sten_rule import STENRule  # ✅ STEN 등급 규칙 모델 import
@@ -102,6 +103,7 @@ def get_test_detail(test_id: str, db: Session = Depends(get_db)):
         duration_minutes=test.duration_minutes,
         questions=question_data
     )
+
 # ✅ 검사 시작 요청 스키마
 class StartRequest(BaseModel):
     mode: str
@@ -179,6 +181,7 @@ def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_
             response_time_sec=0.0  # TODO: 측정 기능 적용 예정
         )
         db.add(response)
+
         # ✅ 문항별 그룹 통계 자동 집계 (school 기준)
         if group_value:
             stat = db.query(QuestionStatsByGroup).filter_by(
@@ -227,46 +230,20 @@ def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_
     ).first()
 
     score_level = f"STEN {sten_rule.sten_level}" if sten_rule else "STEN N/A"
-    
-    # ✅ STEN 분포 자동 집계
-    sten_num = int(sten_rule.sten_level) if sten_rule else None
-    if sten_num and 1 <= sten_num <= 10:
-        for group_type, group_val in [
-            ("overall", "all"),
-            ("school", profile.school if profile else None)
-        ]:
-            if group_val:
-                dist = db.query(ReportSTENDistribution).filter_by(
-                    test_id=test_id,
-                    group_type=group_type,
-                    group_value=group_val,
-                    year=year,
-                    month=month
-                ).first()
-                if not dist:
-                    dist = ReportSTENDistribution(
-                        test_id=test_id,
-                        group_type=group_type,
-                        group_value=group_val,
-                        year=year,
-                        month=month
-                    )
-                    db.add(dist)
-                setattr(dist, f"sten_{sten_num}", getattr(dist, f"sten_{sten_num}") + 1)
 
-    # ✅ 리포트 저장
-    report = Report(
+    # ✅ 리포트 저장 (TestReport로 클래스 이름 변경됨)
+    report = TestReport(  # ✅ Report → TestReport 이름 변경
         report_id=str(uuid.uuid4()),
         email=request.email,
         test_id=test_id,
         score_total=total_score,
-        score_standardized=score_standardized,  # ✅ STEN 계산 기준 점수
-        score_level=score_level,                # ✅ STEN 규칙 적용 결과
-        result_summary="임시 요약"              # TODO: GPT 기반 요약으로 확장 가능
+        score_standardized=score_standardized,
+        score_level=score_level,
+        result_summary="임시 요약"
     )
     db.add(report)
 
-    # ✅ 최종 커밋 및 리포트 ID 응답
+    # ✅ 커밋 및 응답
     db.commit()
     db.refresh(report)
 
@@ -274,3 +251,4 @@ def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_
         message="Responses submitted successfully.",
         report_id=report.report_id
     )
+

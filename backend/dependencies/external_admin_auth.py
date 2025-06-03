@@ -45,3 +45,15 @@ def get_content_admin_user(
     if current_user.role != "content":
         raise HTTPException(status_code=403, detail="콘텐츠 관리자만 접근할 수 있습니다.")
     return current_user
+
+# ✅ 슈퍼 관리자 인증 (추가됨)
+def get_super_admin_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    슈퍼 관리자 권한 확인 함수
+    - 조건: 사용자 role 이 "super_admin" 인 경우 통과
+    """
+    if current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="슈퍼 관리자만 접근할 수 있습니다.")
+    return current_user

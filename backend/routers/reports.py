@@ -3,7 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database.database import SessionLocal, get_db
-from backend.models.test import Report, Test
+# ✅ Report → TestReport로 클래스명 변경
+from backend.models.test import TestReport, Test
 from typing import List, Any
 from pydantic import BaseModel
 from datetime import datetime
@@ -29,7 +30,6 @@ class ReportSummary(BaseModel):
     class Config:
         orm_mode = True
 
-
 # ✅ 리포트 상세 응답 스키마
 class ReportDetail(BaseModel):
     report_id: str
@@ -42,11 +42,10 @@ class ReportDetail(BaseModel):
     class Config:
         orm_mode = True
 
-
 # ✅ 리포트 목록 조회 API
 @router.get("/api/reports/me", response_model=List[ReportSummary])
 def get_my_reports(email: str, db: Session = Depends(get_db)):
-    reports = db.query(Report).filter(Report.email == email).order_by(Report.report_generated_at.desc()).all()
+    reports = db.query(TestReport).filter(TestReport.email == email).order_by(TestReport.report_generated_at.desc()).all()
 
     result = []
     for r in reports:
@@ -61,11 +60,10 @@ def get_my_reports(email: str, db: Session = Depends(get_db)):
         ))
     return result
 
-
 # ✅ 리포트 상세 조회 API
 @router.get("/api/reports/{report_id}", response_model=ReportDetail)
 def get_report_detail(report_id: str, db: Session = Depends(get_db)):
-    report = db.query(Report).filter(Report.report_id == report_id).first()
+    report = db.query(TestReport).filter(TestReport.report_id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
@@ -80,11 +78,10 @@ def get_report_detail(report_id: str, db: Session = Depends(get_db)):
         result_summary=report.result_summary
     )
 
-
 # ✅ 리포트 PDF 또는 HTML 다운로드 API (운영: PDF, 개발: HTML 반환)
 @router.get("/api/reports/{report_id}/download/pdf")
 def download_report_pdf(report_id: str, db: Session = Depends(get_db)):
-    report = db.query(Report).filter(Report.report_id == report_id).first()
+    report = db.query(TestReport).filter(TestReport.report_id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 

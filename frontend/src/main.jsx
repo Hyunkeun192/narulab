@@ -1,9 +1,6 @@
-// src/main.jsx
-
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // ✅ 페이지 컴포넌트 import
 import Home from "./pages/home";
@@ -13,15 +10,28 @@ import QnAPage from "./pages/qna";
 import ContactPage from "./pages/contact";
 import LoginPage from "./pages/login";
 import SignupPage from "./pages/signup";
-import ForgotPassword from "./pages/ForgotPassword"; // ✅ 추가: 비밀번호 찾기 페이지
-import NotFound from "./pages/NotFound"; // ✅ 404 페이지
+import ForgotPassword from "./pages/ForgotPassword";
+import NotFound from "./pages/NotFound";
+import AdminHome from "./pages/admin_home";
+import QuestionForm from "./pages/admin/aptitude/QuestionForm";
+import AssignQuestionsToTest from "./pages/admin/aptitude/AssignQuestionsToTest";
+import TestManage from "./pages/admin/tests/TestManage";
+import QuestionList from "./pages/admin/aptitude/QuestionList";
+import TestEdit from "./pages/admin/tests/TestEdit";
+import NormManage from "./pages/admin/norms/NormManage";
+import ReportRuleManage from "./pages/admin/reports/ReportRuleManage";
+import ReportResult from "./pages/user/ReportResult";
+import ReportHistory from "./pages/user/ReportHistory";
+import StenChart from "./pages/admin/statistics/StenChart";
+import ReportListSchool from "./pages/school/reports/ReportList";
+import ReportListCompany from "./pages/company/reports/ReportList";
 
 // ✅ 공통 레이아웃 import
 import MainLayout from "./layouts/MainLayout";
 
 import "./index.css";
 
-// ✅ 라우트 정보 배열로 정의 (경로 + 렌더링 컴포넌트)
+// ✅ 라우트 정보 배열 정의
 const routes = [
   { path: "/", element: <Home /> },
   { path: "/notice", element: <Notice /> },
@@ -30,42 +40,55 @@ const routes = [
   { path: "/contact", element: <ContactPage /> },
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
-  { path: "/forgot-password", element: <ForgotPassword /> }, // ✅ 추가된 경로
-  { path: "*", element: <NotFound /> }, // ✅ 없는 경로 처리
+  { path: "/forgot-password", element: <ForgotPassword /> },
+  {
+    path: "/admin",
+    element: <AdminHome />,
+    children: [
+      { path: "aptitude/questions", element: <QuestionForm /> },
+      { path: "aptitude/assign", element: <AssignQuestionsToTest /> },
+      { path: "aptitude/questions/list", element: <QuestionList /> },
+      { path: "tests/manage", element: <TestManage /> },
+      { path: "tests/:testId/edit", element: <TestEdit /> },
+      { path: "norms", element: <NormManage /> },
+      { path: "reports/manage", element: <ReportRuleManage /> },
+      { path: "statistics/sten", element: <StenChart /> },
+    ],
+  },
+  { path: "/user/report", element: <ReportResult /> },
+  { path: "/user/reports", element: <ReportHistory /> },
+  { path: "/school/reports", element: <ReportListSchool /> },
+  { path: "/company/reports", element: <ReportListCompany /> },
+  { path: "*", element: <NotFound /> },
 ];
 
-// ✅ 콘텐츠 애니메이션만 감싸는 컴포넌트
-const AnimatedRoutes = () => {
-  const location = useLocation();
-
-  return (
-    // ✅ 공통 Header 포함된 레이아웃으로 감쌈
-    <MainLayout>
-      <AnimatePresence mode="wait">
-        {/* ✅ 페이지 콘텐츠 애니메이션 적용 대상 */}
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Routes location={location}>
-            {routes.map(({ path, element }) => (
-              <Route key={path} path={path} element={element} />
+// ✅ Routes만 그대로 렌더링
+const AppRoutes = () => (
+  <MainLayout>
+    <Routes>
+      {routes.map(({ path, element, children }) =>
+        children ? (
+          <Route key={path} path={path} element={element}>
+            {children.map((child) => (
+              <Route
+                key={`${path}/${child.path}`}
+                path={child.path}
+                element={child.element}
+              />
             ))}
-          </Routes>
-        </motion.div>
-      </AnimatePresence>
-    </MainLayout>
-  );
-};
+          </Route>
+        ) : (
+          <Route key={path} path={path} element={element} />
+        )
+      )}
+    </Routes>
+  </MainLayout>
+);
 
-// ✅ React 렌더링 시작
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AnimatedRoutes />
+      <AppRoutes />
     </BrowserRouter>
   </React.StrictMode>
 );

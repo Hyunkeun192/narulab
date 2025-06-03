@@ -11,12 +11,10 @@ import enum
 from backend.models.question import Question
 from backend.models.option import Option
 
-
 # ✅ 검사 유형 enum
 class TestTypeEnum(str, enum.Enum):
     aptitude = "aptitude"
     personality = "personality"
-
 
 # ✅ 검사 테이블
 class Test(Base):
@@ -30,16 +28,15 @@ class Test(Base):
     duration_minutes = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # ✅ 관계 설정: 문항/옵션/리포트와 연결
     questions = relationship("Question", back_populates="test")
-    reports = relationship("Report", back_populates="test")
+    reports = relationship("TestReport", back_populates="test")  # ✅ Report → TestReport
 
-
-# ✅ 문항 유형 enum
+# ✅ 문항 유형 enum (예: 텍스트, 이미지 등)
 class QuestionTypeEnum(str, enum.Enum):
     text = "text"
     image = "image"
     text_image = "text+image"
-
 
 # ✅ 사용자 응답 테이블
 class Response(Base):
@@ -49,13 +46,12 @@ class Response(Base):
     email = Column(String(255), nullable=False)  # FK → users.email (암호화된 값)
     test_id = Column(String(36), ForeignKey("tests.test_id"))
     question_id = Column(String(36), ForeignKey("questions.question_id"))
-    selected_option_ids = Column(JSON)  # 복수 선택 대응
+    selected_option_ids = Column(JSON)  # ✅ 복수 선택 대응
     response_time_sec = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-
 # ✅ 검사 리포트 테이블
-class Report(Base):
+class TestReport(Base):  # ✅ 기존: class Report(Base)
     __tablename__ = "reports"
 
     report_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -67,4 +63,5 @@ class Report(Base):
     result_summary = Column(Text)
     report_generated_at = Column(DateTime, default=datetime.utcnow)
 
+    # ✅ 관계 설정: 검사(Test)와 연결
     test = relationship("Test", back_populates="reports")

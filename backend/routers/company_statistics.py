@@ -7,7 +7,8 @@ from io import StringIO
 import pandas as pd
 
 from backend.database.database import get_db
-from backend.models.test import Report, Test
+# ✅ Report → TestReport로 이름 변경
+from backend.models.test import TestReport, Test
 from backend.models.user import User
 from backend.models.institution_admin import InstitutionAdmin
 from backend.dependencies.external_admin_auth import get_company_admin_user
@@ -32,7 +33,7 @@ def download_company_user_reports(
     ).all()
 
     user_ids = [u.user_id for u in users]
-    reports = db.query(Report).filter(Report.user_id.in_(user_ids)).all()
+    reports = db.query(TestReport).filter(TestReport.user_id.in_(user_ids)).all()  # ✅ Report → TestReport 이름 변경
     tests = {t.test_id: t.test_name for t in db.query(Test).all()}
 
     user_df = pd.DataFrame([
@@ -83,11 +84,12 @@ def compare_company_statistics(
     ).all()
     all_users = db.query(User).all()
 
+    # ✅ 리포트 불러오기 함수 내부에서도 TestReport 사용
     def get_scores(user_list):
         uids = [u.user_id for u in user_list]
-        reports = db.query(Report).filter(
-            Report.test_id == test_id,
-            Report.user_id.in_(uids)
+        reports = db.query(TestReport).filter(  # ✅ Report → TestReport
+            TestReport.test_id == test_id,
+            TestReport.user_id.in_(uids)
         ).all()
         return [r.score_total for r in reports]
 

@@ -7,7 +7,7 @@ from typing import Optional, Any
 import pandas as pd
 
 from backend.database.database import get_db
-from backend.models.test import Report, Test
+from backend.models.test import TestReport, Test  # ✅ Report → TestReport로 이름 변경
 from backend.models.user import User
 from backend.dependencies.admin_auth import get_super_admin_user
 from backend.schemas.test_analytics import (
@@ -107,7 +107,7 @@ def get_group_stats(
 @router.get("/download")
 def download_user_reports(db: Session = Depends(get_db)):
     users = db.query(User).all()
-    reports = db.query(Report).all()
+    reports = db.query(TestReport).all()  # ✅ Report → TestReport 이름 변경
     tests = {t.test_id: t.test_name for t in db.query(Test).all()}
 
     # 사용자 DF

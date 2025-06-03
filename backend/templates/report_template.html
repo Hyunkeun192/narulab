@@ -1,0 +1,37 @@
+<!-- backend/templates/report_template.html -->
+
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        .value {
+            margin-bottom: 0.8rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>검사 결과 리포트</h1>
+    <div class="value"><span class="label">응시일:</span> {{ created_at }}</div>
+    <div class="value"><span class="label">총점:</span> {{ score }}점</div>
+    <div class="value"><span class="label">STEN 등급:</span> {{ sten }} / 10</div>
+    <div class="value"><span class="label">해석:</span><br />{{ description }}</div>
+</body>
+
+</html>

@@ -49,7 +49,7 @@ def review_question(
 
 
 # 🔍 문항 목록 조회 API (상태별 필터 지원)
-@router.get("/", response_model=List[QuestionListItem])
+@router.get("", response_model=List[QuestionListItem])
 def get_questions(
     status: Optional[QuestionStatus] = Query(None),  # ?status=waiting 등 필터
     db: Session = Depends(get_db)                    # DB 세션 주입
@@ -65,7 +65,7 @@ def get_questions(
 
 
 # ✅ 문항 등록 API (선택지 포함)
-@router.post("/", response_model=QuestionCreateResponse)
+@router.post("", response_model=QuestionCreateResponse)
 def create_question(
     request: QuestionCreateRequest,
     db: Session = Depends(get_db)

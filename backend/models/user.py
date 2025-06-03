@@ -23,11 +23,14 @@ class User(Base):
 
     subscription = Column(String(20), default="free", nullable=False)
 
+    # ✅ 사용자 프로필과의 1:1 관계
     profile = relationship("UserProfile", back_populates="user", uselist=False)
 
     # ✅ 공지사항(Notice) 작성자와의 관계 추가
     notices = relationship("Notice", back_populates="creator")
 
+    # ✅ 사용자 리포트(UserReport)와의 관계 추가
+    reports = relationship("UserReport", back_populates="user")  # ✅ UserReport 모델에서 back_populates="user"
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"

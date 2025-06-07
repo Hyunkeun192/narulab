@@ -252,3 +252,40 @@ def submit_test(test_id: str, request: SubmitRequest, db: Session = Depends(get_
         report_id=report.report_id
     )
 
+# ✅ 검사 등록 요청 스키마
+class CreateTestRequest(BaseModel):
+    test_name: str
+    test_type: TestTypeEnum
+    version: str = "v1.0"
+    version_note: str = ""
+    duration_minutes: int = 30
+
+# ✅ 검사 등록 응답 스키마
+class CreateTestResponse(BaseModel):
+    message: str
+    test_id: str
+
+# ✅ 검사 등록 API
+@router.post("/api/tests", response_model=CreateTestResponse)
+def create_test(request: CreateTestRequest, db: Session = Depends(get_db)):
+    """
+    ✅ 새로운 검사를 생성하는 API입니다.
+    - 검사명, 유형, 버전 등을 받아서 DB에 저장합니다.
+    """
+    new_test = Test(
+        test_id=str(uuid.uuid4()),
+        test_name=request.test_name,
+        test_type=request.test_type,
+        version=request.version,
+        version_note=request.version_note,
+        duration_minutes=request.duration_minutes,
+        created_at=datetime.utcnow()
+    )
+    db.add(new_test)
+    db.commit()
+    db.refresh(new_test)
+
+    return CreateTestResponse(
+        message="검사가 성공적으로 등록되었습니다.",
+        test_id=new_test.test_id
+    )

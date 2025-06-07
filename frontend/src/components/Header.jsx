@@ -41,20 +41,21 @@ export default function Header() {
                 <Link to="/product" className="hover:text-blue-500">Product</Link>
                 <Link to="/qna" className="hover:text-blue-500">QnA</Link>
                 <Link to="/contact" className="hover:text-blue-500">Contact</Link>
-
-                {/* ✅ 관리자 전용 admin 메뉴: 로그인 + 관리자 권한일 때만 노출 */}
-                {isLoggedIn && isAdmin && (
-                    <button
-                        onClick={() => navigate("/admin")}
-                        className="text-blue-500 hover:underline flex items-center gap-1"
-                    >
-                        <Shield size={16} /> Admin
-                    </button>
-                )}
             </nav>
 
-            {/* ✅ 오른쪽: 로그인 또는 로그아웃 버튼 */}
-            <div className="flex justify-end items-center">
+            {/* ✅ 오른쪽: 관리자 메뉴 + 로그인/로그아웃 */}
+            <div className="flex justify-end items-center gap-4">
+                {/* ✅ 관리자 전용 메뉴: 로그인 상태 + 관리자 권한일 때만 노출 */}
+                {isLoggedIn && isAdmin && (
+                    <Link
+                        to="/admin" // ✅ 명확한 경로로 이동
+                        className="text-blue-500 hover:underline flex items-center gap-1"
+                    >
+                        <Shield size={16} /> 관리자 페이지
+                    </Link>
+                )}
+
+                {/* ✅ 로그인 상태에 따른 버튼 표시 */}
                 {!isLoggedIn ? (
                     // ✅ 로그인 상태가 아니라면 로그인 버튼 표시
                     <Link

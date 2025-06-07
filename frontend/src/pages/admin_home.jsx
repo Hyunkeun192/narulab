@@ -8,18 +8,18 @@ export default function AdminHome() {
     return (
         <div className="flex min-h-screen">
             {/* ✅ 좌측 사이드 메뉴 */}
-            <aside className="w-64 bg-gray-100 p-6 border-r">
+            <aside className="w-40 bg-gray-100 p-6 border-r">
                 <h2 className="text-lg font-semibold mb-4">관리자 메뉴</h2>
                 <nav className="flex flex-col gap-3 text-sm">
+                    <Link to="/admin/tests/manage" className="hover:text-blue-500">검사 구성 관리</Link>
                     <Link to="/admin/aptitude/questions" className="hover:text-blue-500">적성검사 문항 등록</Link>
                     <Link to="/admin/personality/questions" className="hover:text-blue-500">인성검사 문항 등록</Link>
-                    <Link to="/admin/tests/manage" className="hover:text-blue-500">검사 구성 관리</Link>
                     <Link to="/admin/norms" className="hover:text-blue-500">규준(Norm) 등록</Link>
-                    <Link to="/admin/tests/manage" className="hover:text-blue-500">검사 목록 관리</Link>
                     <Link to="/admin/aptitude/questions/list" className="hover:text-blue-500">문항 리스트 / 수정</Link>
-                    <Link to="/admin/norms" className="hover:text-blue-500">규준/STEN 설정</Link>
-                    <Link to="/admin/reports/manage" className="hover:text-blue-500">리포트 기준 설정</Link>
+                    <Link to="/admin/norms" className="hover:text-blue-500">STEN 설정</Link>
                     <Link to="/admin/statistics/sten" className="hover:text-blue-500">STEN 통계</Link>
+                    <Link to="/admin/reports/manage" className="hover:text-blue-500">리포트 기준 설정</Link>
+                    
                 </nav>
             </aside>
 

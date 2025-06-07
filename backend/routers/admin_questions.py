@@ -64,25 +64,35 @@ def get_questions(
     return query.order_by(Question.created_at.desc()).all()
 
 
-# ✅ 문항 등록 API (선택지 포함)
+# ✅ 문항 등록 API (선택지 포함) → test_id 없이도 등록 가능하도록 수정됨
 @router.post("", response_model=QuestionCreateResponse)
 def create_question(
     request: QuestionCreateRequest,
     db: Session = Depends(get_db)
 ):
+    """
+    ✅ 문항 등록 API (test_id 없이 문항 풀 형태로도 저장 가능)
+    - 기존에는 test_id가 필수였으나, 이제는 없어도 등록 가능하도록 수정
+    """
+
     # 새로운 문항 생성
     question = Question(
         question_id=uuid4(),
-        test_id=request.test_id,
+        test_id=request.test_id if request.test_id else None,  # ✅ test_id 유무에 따라 분기 처리
         question_text=request.question_text,
         question_type=request.question_type,
         is_multiple_choice=request.is_multiple_choice,
+        instruction=request.instruction,
+        correct_explanation=request.correct_explanation,
+        wrong_explanation=request.wrong_explanation,
+        question_image_url=request.question_image_url,
+        question_name=request.question_name,  # ✅ 이름 필드 포함
         status=QuestionStatus.waiting  # 기본 상태는 승인 대기
     )
     db.add(question)
     db.flush()  # question_id 확보용
 
-    # 선택지들 저장
+    # 선택지 저장
     for index, opt in enumerate(request.options):
         option = Option(
             option_id=uuid4(),

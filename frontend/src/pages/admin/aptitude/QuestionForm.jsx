@@ -1,40 +1,35 @@
-// src/pages/admin/aptitude/QuestionForm.jsx
-
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-// ✅ 적성검사 문항 등록 페이지
+// ✅ 관리자 - 문항 등록 페이지
 export default function QuestionForm() {
     const navigate = useNavigate();
 
-    // ✅ 상태 정의: 문항 내용
-    const [questionText, setQuestionText] = useState("");
-
-    // ✅ 상태 정의: 문항 유형 (text / image)
-    const [questionType, setQuestionType] = useState("text");
-
-    // ✅ 상태 정의: 복수 선택 여부
-    const [isMultipleChoice, setIsMultipleChoice] = useState(false);
-
-    // ✅ 상태 정의: 선택지 배열
+    // ✅ 기존 상태 정의
+    const [instruction, setInstruction] = useState(""); // 지시문
+    const [questionText, setQuestionText] = useState(""); // 문항 텍스트
+    const [questionType, setQuestionType] = useState("text"); // 문항 유형
+    const [isMultipleChoice, setIsMultipleChoice] = useState(false); // 복수 정답 여부
+    const [questionImageUrl, setQuestionImageUrl] = useState(""); // 이미지 문항 URL
+    const [questionImageFile, setQuestionImageFile] = useState(null); // 이미지 파일
+    const [correctExplanation, setCorrectExplanation] = useState(""); // 정답 해설
+    const [wrongExplanation, setWrongExplanation] = useState(""); // 오답 해설
+    const [questionName, setQuestionName] = useState(""); // ✅ 문항 이름 (추가됨)
     const [options, setOptions] = useState([
         { option_text: "", is_correct: false },
         { option_text: "", is_correct: false },
     ]);
 
-    // ✅ 상태 정의: 로딩 및 에러 메시지
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // ✅ 선택지 추가 (최대 5개)
     const handleAddOption = () => {
         if (options.length < 5) {
             setOptions([...options, { option_text: "", is_correct: false }]);
         }
     };
 
-    // ✅ 선택지 제거 (최소 2개)
     const handleRemoveOption = (index) => {
         if (options.length > 2) {
             const updated = [...options];
@@ -43,14 +38,12 @@ export default function QuestionForm() {
         }
     };
 
-    // ✅ 선택지 텍스트 수정
     const handleOptionTextChange = (index, value) => {
         const updated = [...options];
         updated[index].option_text = value;
         setOptions(updated);
     };
 
-    // ✅ 정답 여부 토글
     const handleCorrectToggle = (index) => {
         const updated = [...options];
         if (isMultipleChoice) {
@@ -63,24 +56,44 @@ export default function QuestionForm() {
         setOptions(updated);
     };
 
-    // ✅ 문항 등록 요청 (API 연동)
+    // ✅ 이미지 S3 업로드 처리
+    const uploadImageToS3 = async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+            const response = await axios.post("/api/admin/questions/upload-image", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+            });
+            return response.data.image_url;
+        } catch (err) {
+            console.error("이미지 업로드 실패", err);
+            alert("이미지 업로드 중 오류가 발생했습니다.");
+            return null;
+        }
+    };
+
+    // ✅ 문항 등록 제출 처리
     const handleSubmit = async () => {
         setLoading(true);
         setError("");
 
         try {
-            const testId = localStorage.getItem("currentTestId"); // ✅ 현재 선택된 검사 ID를 localStorage에서 가져옴
-            if (!testId) {
-                setError("test_id가 설정되지 않았습니다.");
-                setLoading(false);
-                return;
-            }
+            const testId = localStorage.getItem("currentTestId"); // ✅ 있을 경우만 payload에 포함
 
+            // ✅ test_id를 조건부로 포함하는 payload 구성
             const payload = {
-                test_id: testId,
+                ...(testId ? { test_id: testId } : {}), // ✅ test_id가 존재할 때만 포함
+                instruction,
                 question_text: questionText,
                 question_type: questionType,
                 is_multiple_choice: isMultipleChoice,
+                question_image_url: questionImageUrl || null,
+                correct_explanation: correctExplanation,
+                wrong_explanation: wrongExplanation,
+                question_name: questionName,
                 options,
             };
 
@@ -101,18 +114,37 @@ export default function QuestionForm() {
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-10">
-            <h1 className="text-2xl font-bold mb-6">적성검사 문항 등록</h1>
+            <h1 className="text-2xl font-bold mb-6">문항 등록</h1>
 
-            {/* ✅ 문항 텍스트 입력 */}
-            <label className="block text-sm font-medium mb-1">문항 내용</label>
+            {/* 지시문 입력 */}
+            <label className="block text-sm font-medium mb-1">지시문</label>
+            <textarea
+                className="w-full border rounded p-2 mb-4"
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                rows={2}
+            />
+
+            {/* 문항 텍스트 입력 */}
+            <label className="block text-sm font-medium mb-1">문항 텍스트</label>
             <textarea
                 className="w-full border rounded p-2 mb-4"
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
-                rows={3}
+                rows={2}
             />
 
-            {/* ✅ 문항 유형 선택 */}
+            {/* ✅ 문항 이름 (추가됨) */}
+            <label className="block text-sm font-medium mb-1">문항 이름</label>
+            <input
+                type="text"
+                className="w-full border rounded p-2 mb-4"
+                value={questionName}
+                onChange={(e) => setQuestionName(e.target.value)}
+                placeholder="예: 문항_001"
+            />
+
+            {/* 문항 유형 선택 */}
             <label className="block text-sm font-medium mb-1">문항 유형</label>
             <select
                 className="w-full border rounded p-2 mb-4"
@@ -123,7 +155,31 @@ export default function QuestionForm() {
                 <option value="image">이미지</option>
             </select>
 
-            {/* ✅ 복수 선택 여부 */}
+            {/* 이미지 업로드 필드 (이미지 유형일 경우) */}
+            {questionType === "image" && (
+                <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">이미지 업로드</label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                                setQuestionImageFile(file);
+                                const imageUrl = await uploadImageToS3(file);
+                                if (imageUrl) {
+                                    setQuestionImageUrl(imageUrl);
+                                }
+                            }
+                        }}
+                    />
+                    {questionImageUrl && (
+                        <img src={questionImageUrl} alt="preview" className="mt-2 max-h-48" />
+                    )}
+                </div>
+            )}
+
+            {/* 복수 정답 여부 체크 */}
             <label className="flex items-center mb-4">
                 <input
                     type="checkbox"
@@ -134,7 +190,7 @@ export default function QuestionForm() {
                 복수 정답 허용
             </label>
 
-            {/* ✅ 보기 목록 */}
+            {/* 선택지 입력 */}
             <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">선택지</label>
                 {options.map((opt, index) => (
@@ -144,9 +200,7 @@ export default function QuestionForm() {
                             className="flex-1 border rounded p-2"
                             placeholder={`선택지 ${index + 1}`}
                             value={opt.option_text}
-                            onChange={(e) =>
-                                handleOptionTextChange(index, e.target.value)
-                            }
+                            onChange={(e) => handleOptionTextChange(index, e.target.value)}
                         />
                         <label className="flex items-center">
                             <input
@@ -179,10 +233,28 @@ export default function QuestionForm() {
                 )}
             </div>
 
-            {/* ✅ 에러 메시지 출력 */}
+            {/* 정답 해설 입력 */}
+            <label className="block text-sm font-medium mb-1">정답 해설</label>
+            <textarea
+                className="w-full border rounded p-2 mb-4"
+                value={correctExplanation}
+                onChange={(e) => setCorrectExplanation(e.target.value)}
+                rows={2}
+            />
+
+            {/* 오답 해설 입력 */}
+            <label className="block text-sm font-medium mb-1">오답 해설</label>
+            <textarea
+                className="w-full border rounded p-2 mb-4"
+                value={wrongExplanation}
+                onChange={(e) => setWrongExplanation(e.target.value)}
+                rows={2}
+            />
+
+            {/* 에러 메시지 표시 */}
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-            {/* ✅ 등록 버튼 */}
+            {/* 제출 버튼 */}
             <button
                 onClick={handleSubmit}
                 disabled={loading}

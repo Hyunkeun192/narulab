@@ -1,40 +1,46 @@
 // src/pages/admin/tests/TestEdit.jsx
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+// ✅ 기존 axios 제거하고 testApi 함수 import
+import {
+    getTestById,
+    updateTest,
+    assignQuestionsToTest,
+} from "../../../api/admin/testApi";
 import { useParams, useNavigate } from "react-router-dom";
 
 // ✅ 검사 상세 보기 및 수정 페이지
 export default function TestEdit() {
-    const { testId } = useParams(); // ✅ URL에서 testId 추출
+    const { testId } = useParams();
     const navigate = useNavigate();
 
     const [test, setTest] = useState(null); // ✅ 검사 정보
-    const [questions, setQuestions] = useState([]); // ✅ 연결된 문항들
-    const [allQuestions, setAllQuestions] = useState([]); // ✅ 연결 가능한 전체 문항 목록
+    const [questions, setQuestions] = useState([]); // ✅ 연결된 문항
+    const [allQuestions, setAllQuestions] = useState([]); // ✅ 전체 문항
     const [selectedToAdd, setSelectedToAdd] = useState([]); // ✅ 새로 추가할 문항 ID들
     const [message, setMessage] = useState("");
 
     // ✅ 검사 정보 및 연결된 문항 불러오기
     const fetchTestDetails = async () => {
         try {
-            const res = await axios.get(`/api/tests/${testId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-            });
-            setTest(res.data.test);
-            setQuestions(res.data.questions);
+            const data = await getTestById(testId); // ✅ axios → getTestById 사용
+            setTest(data.test);
+            setQuestions(data.questions);
         } catch {
             setMessage("검사 정보를 불러오지 못했습니다.");
         }
     };
 
-    // ✅ 전체 문항 목록 불러오기
+    // ✅ 전체 문항 목록 불러오기 (이 부분은 아직 fetch 사용)
     const fetchAllQuestions = async () => {
         try {
-            const res = await axios.get("/api/admin/questions", {
-                headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
+            const res = await fetch("/api/admin/questions", {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
             });
-            setAllQuestions(res.data);
+            const data = await res.json();
+            setAllQuestions(data);
         } catch {
             setMessage("문항 목록을 불러오지 못했습니다.");
         }
@@ -45,30 +51,27 @@ export default function TestEdit() {
         fetchAllQuestions();
     }, [testId]);
 
-    // ✅ 검사명/유형 수정 저장
+    // ✅ 검사 정보 저장 (수정)
     const handleSave = async () => {
         try {
-            await axios.put(
-                `/api/tests/${testId}`,
-                {
-                    test_name: test.test_name,
-                    test_type: test.test_type,
-                },
-                {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-                }
-            );
+            await updateTest(testId, {
+                test_name: test.test_name,
+                test_type: test.test_type,
+            }); // ✅ updateTest 사용
             setMessage("검사 정보가 수정되었습니다.");
         } catch {
             setMessage("저장 중 오류 발생.");
         }
     };
 
-    // ✅ 문항 제거
+    // ✅ 문항 제거 (axios 직접 사용 그대로 유지 – testApi에 정의되지 않음)
     const handleRemoveQuestion = async (questionId) => {
         try {
-            await axios.delete(`/api/admin/tests/${testId}/questions/${questionId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
+            await fetch(`/api/admin/tests/${testId}/questions/${questionId}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
             });
             setMessage("문항이 제거되었습니다.");
             fetchTestDetails();
@@ -77,7 +80,7 @@ export default function TestEdit() {
         }
     };
 
-    // ✅ 문항 연결 추가
+    // ✅ 문항 추가 연결
     const handleAddQuestions = async () => {
         if (selectedToAdd.length === 0) {
             setMessage("추가할 문항을 선택해주세요.");
@@ -85,13 +88,7 @@ export default function TestEdit() {
         }
 
         try {
-            await axios.post(
-                `/api/admin/tests/${testId}/add-question`,
-                { question_ids: selectedToAdd },
-                {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
-                }
-            );
+            await assignQuestionsToTest(testId, selectedToAdd); // ✅ assignQuestionsToTest 사용
             setMessage("문항이 추가되었습니다.");
             setSelectedToAdd([]);
             fetchTestDetails();
@@ -108,7 +105,7 @@ export default function TestEdit() {
 
             {message && <p className="text-blue-600 text-sm mb-4">{message}</p>}
 
-            {/* ✅ 검사 정보 수정 */}
+            {/* ✅ 검사 정보 수정 UI */}
             <div className="mb-8 space-y-3">
                 <div>
                     <label className="block text-sm font-medium mb-1">검사명</label>
@@ -162,7 +159,7 @@ export default function TestEdit() {
                 )}
             </div>
 
-            {/* ✅ 문항 추가 */}
+            {/* ✅ 문항 추가 영역 */}
             <div>
                 <h2 className="text-lg font-semibold mb-3">문항 추가</h2>
                 <div className="border p-4 rounded bg-gray-50 max-h-64 overflow-y-auto mb-4 space-y-2">

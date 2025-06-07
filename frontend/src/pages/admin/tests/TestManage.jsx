@@ -1,6 +1,5 @@
-// src/pages/admin/tests/TestManage.jsx
-
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ 페이지 이동용 훅 추가
 import axios from "axios";
 
 // ✅ 관리자 전용 검사 목록/등록 페이지
@@ -9,6 +8,7 @@ export default function TestManage() {
     const [testName, setTestName] = useState(""); // ✅ 새 검사 이름
     const [testType, setTestType] = useState("aptitude"); // ✅ 검사 유형 선택
     const [message, setMessage] = useState("");
+    const navigate = useNavigate(); // ✅ 라우팅을 위한 navigate 훅
 
     // ✅ 검사 목록 불러오기
     const fetchTests = async () => {
@@ -74,6 +74,12 @@ export default function TestManage() {
         }
     };
 
+    // ✅ 검사에 문항 등록하러 이동
+    const handleAssign = (testId) => {
+        // 문항 연결 페이지로 이동 (test_id를 쿼리로 전달)
+        navigate(`/admin/tests/assign/${testId}`);
+    };
+
     return (
         <div className="max-w-4xl mx-auto px-4 py-10">
             <h1 className="text-2xl font-bold mb-6">검사 목록 관리</h1>
@@ -117,6 +123,7 @@ export default function TestManage() {
                             <th className="border px-4 py-2">유형</th>
                             <th className="border px-4 py-2">ID</th>
                             <th className="border px-4 py-2">삭제</th>
+                            <th className="border px-4 py-2">문항 등록</th> {/* ✅ 새 열 추가 */}
                         </tr>
                     </thead>
                     <tbody>
@@ -133,11 +140,19 @@ export default function TestManage() {
                                         삭제
                                     </button>
                                 </td>
+                                <td className="border px-4 py-2 text-center">
+                                    <button
+                                        onClick={() => handleAssign(test.test_id)}
+                                        className="text-blue-500 hover:underline text-sm"
+                                    >
+                                        문항 등록하기
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                         {tests.length === 0 && (
                             <tr>
-                                <td colSpan="4" className="text-center py-4 text-gray-500">
+                                <td colSpan="5" className="text-center py-4 text-gray-500">
                                     등록된 검사가 없습니다.
                                 </td>
                             </tr>

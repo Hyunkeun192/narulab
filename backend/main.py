@@ -27,6 +27,8 @@ from backend.routers import user_responses
 from backend.routers import user_reports
 from backend.routers import admin_pdf
 from backend.routers import admin_norms
+from backend.routers import admin_upload  # 추가
+from backend.routers import tests
 
 
 
@@ -63,7 +65,8 @@ app.include_router(user_responses.router)
 app.include_router(user_reports.router)
 app.include_router(admin_pdf.router)
 app.include_router(admin_norms.router)
-
+app.include_router(admin_upload.router)  # 추가
+app.include_router(tests.router)
 
 
 

@@ -50,11 +50,16 @@ export default function QuestionList() {
         setSelectedQuestion({ ...question }); // 깊은 복사
     };
 
-    // ✅ 수정 항목 변경 핸들러
+    // ✅ 수정 항목 변경 핸들러 (선택지용)
     const updateOption = (index, key, value) => {
         const updated = { ...selectedQuestion };
         updated.options[index][key] = value;
         setSelectedQuestion(updated);
+    };
+
+    // ✅ 수정 항목 변경 핸들러 (문항 자체 정보용)
+    const updateQuestionField = (key, value) => {
+        setSelectedQuestion({ ...selectedQuestion, [key]: value });
     };
 
     // ✅ 수정 저장
@@ -67,6 +72,10 @@ export default function QuestionList() {
                     question_type: selectedQuestion.question_type,
                     is_multiple_choice: selectedQuestion.is_multiple_choice,
                     options: selectedQuestion.options,
+                    instruction: selectedQuestion.instruction, // ✅ 추가: 지시문
+                    question_name: selectedQuestion.question_name, // ✅ 추가: 문항 이름
+                    correct_explanation: selectedQuestion.correct_explanation, // ✅ 추가: 정답 해설
+                    wrong_explanation: selectedQuestion.wrong_explanation, // ✅ 추가: 오답 해설
                 },
                 {
                     headers: {
@@ -93,17 +102,34 @@ export default function QuestionList() {
             {selectedQuestion && (
                 <div className="border p-4 rounded mb-6 bg-gray-50">
                     <h2 className="font-semibold mb-2">문항 수정</h2>
+
+                    {/* ✅ 문항 이름 */}
+                    <input
+                        value={selectedQuestion.question_name || ""}
+                        onChange={(e) => updateQuestionField("question_name", e.target.value)}
+                        className="w-full border rounded p-2 mb-2"
+                        placeholder="문항 이름 (예: 중심 내용 파악)"
+                    />
+
+                    {/* ✅ 지시문 */}
+                    <textarea
+                        value={selectedQuestion.instruction || ""}
+                        onChange={(e) => updateQuestionField("instruction", e.target.value)}
+                        className="w-full border rounded p-2 mb-2"
+                        rows={2}
+                        placeholder="지시문 입력"
+                    />
+
+                    {/* ✅ 문항 텍스트 */}
                     <textarea
                         value={selectedQuestion.question_text}
-                        onChange={(e) =>
-                            setSelectedQuestion({
-                                ...selectedQuestion,
-                                question_text: e.target.value,
-                            })
-                        }
+                        onChange={(e) => updateQuestionField("question_text", e.target.value)}
                         className="w-full border rounded p-2 mb-2"
-                        rows={3}
+                        rows={2}
+                        placeholder="문항 텍스트 입력"
                     />
+
+                    {/* ✅ 선택지 수정 */}
                     <div className="mb-2 space-y-2">
                         {selectedQuestion.options.map((opt, index) => (
                             <div key={index} className="flex items-center gap-2">
@@ -129,6 +155,28 @@ export default function QuestionList() {
                             </div>
                         ))}
                     </div>
+
+                    {/* ✅ 해설 입력 */}
+                    <textarea
+                        value={selectedQuestion.correct_explanation || ""}
+                        onChange={(e) =>
+                            updateQuestionField("correct_explanation", e.target.value)
+                        }
+                        className="w-full border rounded p-2 mt-2"
+                        rows={2}
+                        placeholder="정답 해설 입력"
+                    />
+                    <textarea
+                        value={selectedQuestion.wrong_explanation || ""}
+                        onChange={(e) =>
+                            updateQuestionField("wrong_explanation", e.target.value)
+                        }
+                        className="w-full border rounded p-2 mt-2"
+                        rows={2}
+                        placeholder="오답 해설 입력"
+                    />
+
+                    {/* ✅ 저장/취소 버튼 */}
                     <div className="mt-3 flex gap-3">
                         <button
                             onClick={handleSave}
@@ -150,7 +198,15 @@ export default function QuestionList() {
             <div className="space-y-6">
                 {questions.map((q) => (
                     <div key={q.question_id} className="border p-4 rounded shadow-sm bg-white">
-                        <div className="font-medium mb-2">{q.question_text}</div>
+                        <div className="text-gray-600 text-sm mb-1">
+                            {q.question_name} ({q.question_type})
+                        </div>
+                        <div className="font-medium mb-1 whitespace-pre-line">
+                            {q.instruction}
+                        </div>
+                        <div className="mb-2 whitespace-pre-line">
+                            {q.question_text}
+                        </div>
                         <ul className="list-disc list-inside mb-2">
                             {q.options.map((opt, i) => (
                                 <li key={i} className={opt.is_correct ? "text-green-600" : ""}>
@@ -159,6 +215,12 @@ export default function QuestionList() {
                                 </li>
                             ))}
                         </ul>
+                        <div className="text-xs text-gray-500 mb-1">
+                            정답 해설: {q.correct_explanation || "없음"}
+                        </div>
+                        <div className="text-xs text-gray-500 mb-2">
+                            오답 해설: {q.wrong_explanation || "없음"}
+                        </div>
                         <div className="flex gap-4 text-sm">
                             <button
                                 onClick={() => handleEdit(q)}

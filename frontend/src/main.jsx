@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"; // ✅ Navigate 추가
 
 // ✅ 페이지 컴포넌트 import
 import Home from "./pages/home";
@@ -41,10 +41,19 @@ const routes = [
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
+
   {
     path: "/admin",
     element: <AdminHome />,
     children: [
+      // ✅ /admin 진입 시 /admin/home으로 리디렉션
+      { path: "", element: <Navigate to="home" replace /> },
+
+      // ✅ /admin/home 명시적 등록
+      {
+        path: "home",
+        element: <div className="text-xl font-semibold">관리자 홈입니다</div>,
+      },
       { path: "aptitude/questions", element: <QuestionForm /> },
       { path: "aptitude/assign", element: <AssignQuestionsToTest /> },
       { path: "aptitude/questions/list", element: <QuestionList /> },
@@ -55,6 +64,7 @@ const routes = [
       { path: "statistics/sten", element: <StenChart /> },
     ],
   },
+
   { path: "/user/report", element: <ReportResult /> },
   { path: "/user/reports", element: <ReportHistory /> },
   { path: "/school/reports", element: <ReportListSchool /> },

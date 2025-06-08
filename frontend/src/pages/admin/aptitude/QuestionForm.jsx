@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 export default function QuestionForm() {
     const navigate = useNavigate();
 
-    // ✅ 기존 상태 정의
+    // ✅ 상태 정의
     const [instruction, setInstruction] = useState(""); // 지시문
     const [questionText, setQuestionText] = useState(""); // 문항 텍스트
     const [questionType, setQuestionType] = useState("text"); // 문항 유형
@@ -15,7 +15,7 @@ export default function QuestionForm() {
     const [questionImageFile, setQuestionImageFile] = useState(null); // 이미지 파일
     const [correctExplanation, setCorrectExplanation] = useState(""); // 정답 해설
     const [wrongExplanation, setWrongExplanation] = useState(""); // 오답 해설
-    const [questionName, setQuestionName] = useState(""); // ✅ 문항 이름 (추가됨)
+    const [questionName, setQuestionName] = useState(""); // 문항 이름
     const [options, setOptions] = useState([
         { option_text: "", is_correct: false },
         { option_text: "", is_correct: false },
@@ -81,11 +81,8 @@ export default function QuestionForm() {
         setError("");
 
         try {
-            const testId = localStorage.getItem("currentTestId"); // ✅ 있을 경우만 payload에 포함
-
-            // ✅ test_id를 조건부로 포함하는 payload 구성
+            // ✅ test_id 없이 문항 풀로 등록
             const payload = {
-                ...(testId ? { test_id: testId } : {}), // ✅ test_id가 존재할 때만 포함
                 instruction,
                 question_text: questionText,
                 question_type: questionType,
@@ -134,7 +131,7 @@ export default function QuestionForm() {
                 rows={2}
             />
 
-            {/* ✅ 문항 이름 (추가됨) */}
+            {/* 문항 이름 */}
             <label className="block text-sm font-medium mb-1">문항 이름</label>
             <input
                 type="text"
@@ -155,7 +152,7 @@ export default function QuestionForm() {
                 <option value="image">이미지</option>
             </select>
 
-            {/* 이미지 업로드 필드 (이미지 유형일 경우) */}
+            {/* 이미지 업로드 필드 */}
             {questionType === "image" && (
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-1">이미지 업로드</label>
@@ -179,7 +176,7 @@ export default function QuestionForm() {
                 </div>
             )}
 
-            {/* 복수 정답 여부 체크 */}
+            {/* 복수 정답 여부 */}
             <label className="flex items-center mb-4">
                 <input
                     type="checkbox"
@@ -251,7 +248,7 @@ export default function QuestionForm() {
                 rows={2}
             />
 
-            {/* 에러 메시지 표시 */}
+            {/* 에러 메시지 */}
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
             {/* 제출 버튼 */}

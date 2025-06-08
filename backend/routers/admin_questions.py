@@ -1,3 +1,5 @@
+# /Users/hyunkeunkim/Desktop/narulab/backend/routers/admin_questions.py
+
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from uuid import UUID, uuid4
@@ -13,7 +15,7 @@ from backend.schemas.question_create import QuestionCreateRequest, QuestionCreat
 # ✅ 관리자 인증 의존성 import
 from backend.dependencies.admin_auth import get_current_admin_user
 
-# 관리자 문항 관련 라우터 정의
+# ✅ 관리자 문항 관련 라우터 정의
 router = APIRouter(
     prefix="/api/admin/questions",
     tags=["Admin - Questions"],
@@ -27,23 +29,22 @@ def review_question(
     request: QuestionReviewRequest,      # 승인 여부 + 코멘트 요청 스키마
     db: Session = Depends(get_db)        # SQLAlchemy DB 세션 주입
 ):
-    # 문항 조회
+    # ✅ 문항 조회
     question = db.query(Question).filter(Question.question_id == question_id).first()
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
 
-    # 승인 처리
+    # ✅ 승인 또는 반려 처리
     if request.approved:
         question.status = QuestionStatus.approved
         question.review_comment = None
         message = "Question approved."
-    # 반려 처리
     else:
         question.status = QuestionStatus.rejected
         question.review_comment = request.review_comment or "No comment provided."
         message = "Question reviewed and rejected."
 
-    # DB 반영
+    # ✅ DB 반영
     db.commit()
     return QuestionReviewResponse(message=message)
 
@@ -56,11 +57,11 @@ def get_questions(
 ):
     query = db.query(Question)
 
-    # 상태 필터링이 있을 경우
+    # ✅ 상태 필터링이 있을 경우 적용
     if status:
         query = query.filter(Question.status == status)
 
-    # 최신순 정렬하여 반환
+    # ✅ 최신순 정렬하여 반환
     return query.order_by(Question.created_at.desc()).all()
 
 
@@ -73,12 +74,33 @@ def create_question(
     """
     ✅ 문항 등록 API (test_id 없이 문항 풀 형태로도 저장 가능)
     - 기존에는 test_id가 필수였으나, 이제는 없어도 등록 가능하도록 수정
+    - FK 오류 방지를 위해 test_id가 존재하고 실제 유효한 경우에만 포함
     """
 
+    # ✅ 필드 정의용 dict 생성 (test_id 조건부 포함 위해 분리)
+    question_fields = {
+        "question_id": uuid4(),
+        "question_text": request.question_text,
+        "question_type": request.question_type,
+        "is_multiple_choice": request.is_multiple_choice,
+        "instruction": request.instruction,
+        "correct_explanation": request.correct_explanation,
+        "wrong_explanation": request.wrong_explanation,
+        "question_image_url": request.question_image_url,
+        "question_name": request.question_name,
+        "status": QuestionStatus.waiting
+    }
+
+    # ✅ test_id가 실제로 존재하고 빈 문자열/None이 아닌 경우만 포함
+    if request.test_id and str(request.test_id).strip() not in ("", "null", "None"):
+        question_fields["test_id"] = request.test_id
+
+    # ✅ Question 객체 생성
+    question = Question(**question_fields)
     db.add(question)
     db.flush()  # question_id 확보용
 
-    # 선택지 저장
+    # ✅ 선택지 저장
     for index, opt in enumerate(request.options):
         option = Option(
             option_id=uuid4(),
@@ -90,8 +112,10 @@ def create_question(
         )
         db.add(option)
 
+    # ✅ 최종 커밋
     db.commit()
 
+    # ✅ 응답 반환
     return QuestionCreateResponse(
         question_id=question.question_id,
         message="Question created successfully."

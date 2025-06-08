@@ -38,3 +38,7 @@ Desktop.ini
 
 # macOS 텍스트 클리핑 무시
 *.textClipping
+venv/
+__pycache__/
+*.pyc
+.DS_Store

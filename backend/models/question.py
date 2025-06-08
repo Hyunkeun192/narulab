@@ -26,7 +26,7 @@ class Question(Base):
     __tablename__ = "questions"
 
     question_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    test_id = Column(String(36), ForeignKey("tests.test_id"), nullable=False, default=lambda: str(uuid.uuid4()))
+    test_id = Column(String(36), ForeignKey("tests.test_id"), nullable=True)
 
     question_type = Column(String(50), nullable=False)  # ✅ 텍스트 / 이미지
     usage_type = Column(PgEnum(UsageType), nullable=True)  # ✅ 추가: 적성/인성 문항 구분용
@@ -50,3 +50,7 @@ class Question(Base):
 
     # 🔸 관계 설정 (Test → Question 간 연결)
     test = relationship("Test", back_populates="questions")
+
+    # ✅ 선택지 관계 설정 (Question → Option 연결)
+    options = relationship("Option", backref="question", cascade="all, delete-orphan")
+    # → Question 객체에서 .options 사용 가능 (예: joinedload(Question.options))

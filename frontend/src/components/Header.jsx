@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn, LogOut, Shield } from "lucide-react"; // ✅ 관리자 아이콘 추가
 import logo from "../assets/logo.png"; // ✅ 로고 이미지 import
@@ -6,14 +6,23 @@ import logo from "../assets/logo.png"; // ✅ 로고 이미지 import
 export default function Header() {
     const navigate = useNavigate();
 
-    // ✅ 로그인 여부 판단 (accessToken 존재 여부)
-    const isLoggedIn = !!localStorage.getItem("accessToken");
+    // ✅ 상태 기반 로그인 여부 및 관리자 여부 저장
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [role, setRole] = useState(null);
 
-    // ✅ 관리자 여부 판단: localStorage에 저장된 userRole 값을 확인
-    const role = localStorage.getItem("userRole"); // 예: 'super_admin', 'content_admin'
-    const isAdmin = role === "super_admin" || role === "content_admin"; // ✅ super 또는 content 관리자만 true
+    // ✅ localStorage 값 초기 로딩 및 리렌더링 반영
+    useEffect(() => {
+        const token = localStorage.getItem("accessToken");
+        const userRole = localStorage.getItem("userRole");
 
-    // ✅ 로그아웃 처리: accessToken과 userRole 모두 삭제
+        setIsLoggedIn(!!token);
+        setRole(userRole);
+    }, []);
+
+    // ✅ 관리자 여부: 상태에 따라 판별
+    const isAdmin = role === "super_admin" || role === "content_admin";
+
+    // ✅ 로그아웃 처리: localStorage 제거 + 이동
     const handleLogout = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userRole");
@@ -48,7 +57,7 @@ export default function Header() {
                 {/* ✅ 관리자 전용 메뉴: 로그인 상태 + 관리자 권한일 때만 노출 */}
                 {isLoggedIn && isAdmin && (
                     <Link
-                        to="/admin" // ✅ 명확한 경로로 이동
+                        to="/admin"
                         className="text-blue-500 hover:underline flex items-center gap-1"
                     >
                         <Shield size={16} /> 관리자 페이지

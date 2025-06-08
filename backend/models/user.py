@@ -1,8 +1,4 @@
-# app/models/user.py
-
-import uuid
 from sqlalchemy import Column, String, Boolean, DateTime, Integer, ForeignKey
-from sqlalchemy.dialects.mysql import TEXT
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from backend.database.database import Base
@@ -10,20 +6,27 @@ from backend.database.database import Base
 class User(Base):
     __tablename__ = "users"
 
-    user_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    encrypted_email = Column(String(255), unique=True, nullable=False)
-    encrypted_phone_number = Column(String(255), nullable=False)
+    # ✅ 기본 사용자 정보
+    user_id = Column(String(36), primary_key=True, index=True)
     nickname = Column(String(50), nullable=False)
-    hashed_password = Column(TEXT, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # ✅ 이메일/전화번호 컬럼명을 DB와 일치시킴
+    encrypted_email = Column(String(255), unique=True, nullable=False)  # 기존 email → 수정됨
+    encrypted_phone_number = Column(String(255), unique=True, nullable=False)  # 기존 phone_number → 수정됨
+
+    hashed_password = Column(String(255), nullable=False)
+
+    # ✅ 활성 사용자 여부
     is_active = Column(Boolean, default=True)
 
-    # ✅ 관리자 여부 확인용 필드 추가
-    is_admin = Column(Boolean, default=False, nullable=False)
+    # ✅ 사용자 역할 필드 (관리자 권한 구분용)
+    role = Column(String(50), nullable=False, default="user")
 
-    subscription = Column(String(20), default="free", nullable=False)
+    # ✅ 생성/수정 타임스탬프
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # ✅ 사용자 프로필과의 1:1 관계
+    # ✅ 프로필(UserProfile)과의 관계 설정
     profile = relationship("UserProfile", back_populates="user", uselist=False)
 
     # ✅ 공지사항(Notice) 작성자와의 관계 추가
@@ -45,3 +48,4 @@ class UserProfile(Base):
 
     user_id = Column(String(36), ForeignKey("users.user_id"))
     user = relationship("User", back_populates="profile")
+

@@ -32,11 +32,14 @@ export default function LoginPage() {
             localStorage.setItem("accessToken", token);
 
             // ✅ 사용자 정보 요청 (/api/me) - 인증 헤더 포함
-            await axios.get("/api/me", {
+            const meRes = await axios.get("/api/me", {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
+
+            // ✅ 사용자 role 정보 저장 → Header.jsx에서 관리자 조건 확인 가능
+            localStorage.setItem("userRole", meRes.data.role); // ✅ 관리자 권한 체크용
 
             // ✅ 로그인 성공 → 홈으로 이동
             navigate("/");

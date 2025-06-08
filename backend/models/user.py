@@ -35,6 +35,11 @@ class User(Base):
     # ✅ 사용자 리포트(UserReport)와의 관계 추가
     reports = relationship("UserReport", back_populates="user")  # ✅ UserReport 모델에서 back_populates="user"
 
+    # ✅ 관리자 여부 판단 프로퍼티 추가 (super_admin, content_admin, analytics_admin 포함)
+    @property
+    def is_admin(self):
+        return self.role in ['super_admin', 'content_admin', 'analytics_admin']
+
 class UserProfile(Base):
     __tablename__ = "user_profiles"
 
@@ -48,4 +53,3 @@ class UserProfile(Base):
 
     user_id = Column(String(36), ForeignKey("users.user_id"))
     user = relationship("User", back_populates="profile")
-

@@ -1,3 +1,5 @@
+// frontend/src/pages/login.jsx
+
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -40,6 +42,9 @@ export default function LoginPage() {
 
             // ✅ 사용자 role 정보 저장 → Header.jsx에서 관리자 조건 확인 가능
             localStorage.setItem("userRole", meRes.data.role); // ✅ 관리자 권한 체크용
+
+            // ✅ 로그인 성공 알림 → Header.jsx에서 상태 변경 감지 용도
+            window.dispatchEvent(new Event("login-success")); // ✅ 상태 리렌더링 트리거
 
             // ✅ 로그인 성공 → 홈으로 이동
             navigate("/");

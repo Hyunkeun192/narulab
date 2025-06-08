@@ -1,10 +1,9 @@
 # app/core/security.py
 
 from passlib.context import CryptContext
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
+from Crypto.Cipher import AES  # ✅ 변경: cryptography 대신 pycryptodome 사용
 import base64
-import os
+import hashlib
 
 from backend.core.config import settings
 
@@ -18,41 +17,33 @@ from backend.models.user import User
 # 🔐 bcrypt를 활용한 비밀번호 해시 및 검증을 위한 설정
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
 # ✅ 비밀번호를 bcrypt 방식으로 해시
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
-
 
 # ✅ 해시된 비밀번호와 사용자가 입력한 비밀번호를 비교
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+# ✅ AES 암호화 키 준비 (32바이트 키로 SHA256 변환)
+AES_SECRET_KEY = settings.AES_SECRET_KEY  # .env에서 불러옴
 
-# 🛡 AES256 양방향 암호화를 위한 키 설정
-# (환경변수 또는 .env에서 읽어오되, 여기선 예시 키를 생성)
-AES_KEY = settings.AES_SECRET_KEY[:32].encode()  # ✅ AES 전용 키 사용
-AES_IV = AES_KEY[:16]  # CBC 모드 초기화 벡터 (보통 고정값 사용 가능)
-
-
-# ✅ AES256 CBC 모드 기반 암호화
+# ✅ Codex와 동일한 AES-256 + ECB + PKCS7 padding 방식으로 암호화
 def aes_encrypt(plain_text: str) -> str:
-    backend = default_backend()
-    cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=backend)
-    encryptor = cipher.encryptor()
-    padded_data = plain_text.encode() + b"\0" * (16 - len(plain_text.encode()) % 16)
-    encrypted = encryptor.update(padded_data) + encryptor.finalize()
+    key = hashlib.sha256(AES_SECRET_KEY.encode()).digest()  # 32바이트 키로 변환
+    cipher = AES.new(key, AES.MODE_ECB)
+    pad_len = 16 - len(plain_text.encode()) % 16
+    padded = plain_text + chr(pad_len) * pad_len
+    encrypted = cipher.encrypt(padded.encode())
     return base64.b64encode(encrypted).decode()
 
-
-# ✅ 복호화 함수
+# ✅ Codex와 동일한 방식의 복호화
 def aes_decrypt(encrypted_text: str) -> str:
-    backend = default_backend()
-    cipher = Cipher(algorithms.AES(AES_KEY), modes.CBC(AES_IV), backend=backend)
-    decryptor = cipher.decryptor()
-    decrypted = decryptor.update(base64.b64decode(encrypted_text)) + decryptor.finalize()
-    return decrypted.rstrip(b"\0").decode()
-
+    key = hashlib.sha256(AES_SECRET_KEY.encode()).digest()
+    cipher = AES.new(key, AES.MODE_ECB)
+    decrypted = cipher.decrypt(base64.b64decode(encrypted_text))
+    pad_len = decrypted[-1]
+    return decrypted[:-pad_len].decode()
 
 # ✅ 현재 로그인된 사용자 정보 가져오기 (JWT 기반)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")  # 🔑 토큰 경로 설정

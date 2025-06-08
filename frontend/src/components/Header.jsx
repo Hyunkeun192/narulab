@@ -1,3 +1,5 @@
+// frontend/src/components/Header.jsx
+
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn, LogOut, Shield } from "lucide-react"; // ✅ 관리자 아이콘 추가
@@ -12,11 +14,23 @@ export default function Header() {
 
     // ✅ localStorage 값 초기 로딩 및 리렌더링 반영
     useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-        const userRole = localStorage.getItem("userRole");
+        const syncLoginState = () => {
+            const token = localStorage.getItem("accessToken");
+            const userRole = localStorage.getItem("userRole");
 
-        setIsLoggedIn(!!token);
-        setRole(userRole);
+            setIsLoggedIn(!!token);
+            setRole(userRole);
+        };
+
+        syncLoginState(); // ✅ 최초 마운트 시 1회 실행
+
+        // ✅ 로그인 성공 시 리렌더링 트리거 감지
+        window.addEventListener("login-success", syncLoginState);
+
+        // ✅ 클린업: 이벤트 제거
+        return () => {
+            window.removeEventListener("login-success", syncLoginState);
+        };
     }, []);
 
     // ✅ 관리자 여부: 상태에 따라 판별
@@ -26,7 +40,9 @@ export default function Header() {
     const handleLogout = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userRole");
-        navigate("/");
+        setIsLoggedIn(false);
+        setRole(null);
+        navigate("/"); // 홈으로 리다이렉트
     };
 
     return (
@@ -45,7 +61,6 @@ export default function Header() {
                     text-sm sm:text-base font-medium
                 "
             >
-                {/* ✅ 메뉴 항목: 화면이 넓을 때는 가로 한 줄, 좁아질수록 2개씩 2줄로 줄바꿈됨 */}
                 <Link to="/notice" className="hover:text-blue-500">Notice</Link>
                 <Link to="/product" className="hover:text-blue-500">Product</Link>
                 <Link to="/qna" className="hover:text-blue-500">QnA</Link>
@@ -66,12 +81,11 @@ export default function Header() {
 
                 {/* ✅ 로그인 상태에 따른 버튼 표시 */}
                 {!isLoggedIn ? (
-                    // ✅ 로그인 상태가 아니라면 로그인 버튼 표시
                     <Link
                         to="/login"
                         className="group relative flex items-center justify-center w-24 h-10"
                     >
-                        {/* ✅ 로그인 버튼 배경 애니메이션 */}
+                        {/* ✅ 로그인 버튼 애니메이션 */}
                         <div
                             className="absolute inset-0 rounded-full bg-blue-500 opacity-0 scale-95 
                                 group-hover:opacity-100 group-hover:scale-100 
@@ -83,12 +97,11 @@ export default function Header() {
                         </div>
                     </Link>
                 ) : (
-                    // ✅ 로그인 상태라면 로그아웃 버튼 표시
                     <button
                         onClick={handleLogout}
                         className="group relative flex items-center justify-center w-24 h-10"
                     >
-                        {/* ✅ 로그아웃 버튼 배경 애니메이션 */}
+                        {/* ✅ 로그아웃 버튼 애니메이션 */}
                         <div
                             className="absolute inset-0 rounded-full bg-blue-500 opacity-0 scale-95 
                                 group-hover:opacity-100 group-hover:scale-100 

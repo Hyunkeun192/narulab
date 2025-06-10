@@ -62,7 +62,7 @@ export default function SignupPage() {
             return;
         }
         try {
-            const res = await axios.get(`/api/users/check-email?email=${email}`);
+            const res = await axios.get(`/api/check-email?email=${email}`);
             setEmailExists(!res.data.available);
             setEmailValid(true);
         } catch {
@@ -74,7 +74,7 @@ export default function SignupPage() {
     // ✅ 전화번호 중복 확인 요청 함수
     const checkPhoneNumberDuplicate = async (value) => {
         try {
-            const res = await axios.get(`/api/users/check-phone?phone=${value}`);
+            const res = await axios.get(`/api/check-phone?phone=${value}`);
             setPhoneExists(!res.data.available);
         } catch {
             setPhoneExists(false);
@@ -84,7 +84,7 @@ export default function SignupPage() {
     // ✅ 닉네임 중복 확인 요청 함수
     const checkNicknameDuplicate = async (value) => {
         try {
-            const res = await axios.get(`/api/users/check-nickname?nickname=${value}`);
+            const res = await axios.get(`/api/check-nickname?nickname=${value}`);
             setNicknameExists(!res.data.available);
         } catch {
             setNicknameExists(true);

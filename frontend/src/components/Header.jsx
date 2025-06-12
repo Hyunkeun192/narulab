@@ -57,8 +57,8 @@ export default function Header() {
             {/* ✅ 가운데: 공통 네비게이션 메뉴 */}
             <nav
                 className="
-                    flex justify-center flex-wrap gap-x-6 gap-y-2 
-                    text-sm sm:text-base font-medium
+                    flex flex-wrap justify-center w-fit mx-auto
+                    gap-x-6 gap-y-2 text-sm sm:text-base font-medium
                 "
             >
                 <Link to="/notice" className="hover:text-blue-500">Notice</Link>

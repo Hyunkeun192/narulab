@@ -1,20 +1,21 @@
-// src/pages/notice.jsx
-
 import React, { useEffect, useState } from "react";
-import { useUser } from "../hooks/useUser"; // ✅ 로그인 사용자 정보 훅
+import { useUser } from "../hooks/useUser"; // ✅ 로그인 사용자 정보 가져오는 훅
 import axios from "axios";
 import { motion } from "framer-motion"; // ✅ 페이지 전환 애니메이션
 
 export default function Notice() {
     const user = useUser();
-    const isAdmin = user?.is_super_admin;
+
+    // ✅ 로그인 여부와 super admin 여부를 명확하게 분리해서 판별
+    const isLoggedIn = !!user?.id;
+    const isSuperAdmin = !!user?.is_super_admin;
 
     const [notices, setNotices] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [editingNotice, setEditingNotice] = useState(null);
     const [form, setForm] = useState({ title: "", content: "" });
 
-    // ✅ 공지사항 목록 불러오기
+    // ✅ 공지사항 전체 조회
     useEffect(() => {
         axios
             .get("/api/notices")
@@ -25,31 +26,29 @@ export default function Notice() {
             });
     }, []);
 
-    // ✅ 공지 등록 버튼 클릭 시 초기화
+    // ✅ 공지 등록 모달 열기 (등록 모드)
     const openCreateModal = () => {
         setEditingNotice(null);
         setForm({ title: "", content: "" });
         setShowModal(true);
     };
 
-    // ✅ 공지 수정 버튼 클릭 시 값 세팅
+    // ✅ 공지 수정 모달 열기
     const openEditModal = (notice) => {
         setEditingNotice(notice);
         setForm({ title: notice.title, content: notice.content });
         setShowModal(true);
     };
 
-    // ✅ 공지 등록/수정 전송
+    // ✅ 등록 또는 수정 요청
     const handleSubmit = async () => {
         try {
             if (editingNotice) {
-                // 수정
                 const res = await axios.put(`/api/notices/${editingNotice.id}`, form);
                 setNotices((prev) =>
                     prev.map((n) => (n.id === editingNotice.id ? res.data : n))
                 );
             } else {
-                // 새 공지 등록
                 const res = await axios.post("/api/notices", form);
                 setNotices((prev) => [res.data, ...prev]);
             }
@@ -59,7 +58,7 @@ export default function Notice() {
         }
     };
 
-    // ✅ 공지 삭제
+    // ✅ 삭제 요청
     const handleDelete = async (id) => {
         if (window.confirm("정말로 삭제하시겠습니까?")) {
             try {
@@ -83,8 +82,8 @@ export default function Notice() {
             <main className="max-w-3xl mx-auto px-4 py-10">
                 <h1 className="text-3xl font-bold mb-6 text-center">공지사항</h1>
 
-                {/* ✅ 관리자만 공지 등록 가능 */}
-                {isAdmin && (
+                {/* ✅ 로그인 + super admin만 공지 등록 버튼 보임 */}
+                {isLoggedIn && isSuperAdmin && (
                     <div className="mb-6 text-right">
                         <button
                             onClick={openCreateModal}
@@ -95,7 +94,7 @@ export default function Notice() {
                     </div>
                 )}
 
-                {/* ✅ 공지 목록 */}
+                {/* ✅ 공지 목록 출력 */}
                 {notices.length > 0 ? (
                     <ul className="space-y-4">
                         {notices.map((notice) => (
@@ -108,8 +107,8 @@ export default function Notice() {
                                     작성일: {new Date(notice.created_at).toLocaleString()}
                                 </p>
 
-                                {/* ✅ 관리자에게만 수정/삭제 버튼 표시 */}
-                                {isAdmin && (
+                                {/* ✅ 로그인 + super admin만 수정/삭제 버튼 보임 */}
+                                {isLoggedIn && isSuperAdmin && (
                                     <div className="mt-2 flex gap-4">
                                         <button
                                             onClick={() => openEditModal(notice)}
@@ -135,8 +134,8 @@ export default function Notice() {
                 )}
             </main>
 
-            {/* ✅ 공지 등록/수정 모달 */}
-            {showModal && (
+            {/* ✅ 모달은 로그인 + super admin인 경우에만 열 수 있음 */}
+            {isLoggedIn && isSuperAdmin && showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4">

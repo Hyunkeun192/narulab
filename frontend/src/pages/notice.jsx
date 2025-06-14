@@ -10,10 +10,10 @@ export default function Notice() {
     const isLoggedIn = !!user?.id;
     const isSuperAdmin = !!user?.is_super_admin;
 
-    const [notices, setNotices] = useState([]);
-    const [showModal, setShowModal] = useState(false);
-    const [editingNotice, setEditingNotice] = useState(null);
-    const [form, setForm] = useState({ title: "", content: "" });
+    const [notices, setNotices] = useState([]); // ✅ 공지사항 목록 상태
+    const [showModal, setShowModal] = useState(false); // ✅ 모달 표시 여부
+    const [editingNotice, setEditingNotice] = useState(null); // ✅ 수정 중인 공지 저장
+    const [form, setForm] = useState({ title: "", content: "" }); // ✅ 폼 입력 상태
 
     // ✅ 공지사항 전체 조회
     useEffect(() => {
@@ -40,15 +40,17 @@ export default function Notice() {
         setShowModal(true);
     };
 
-    // ✅ 등록 또는 수정 요청
+    // ✅ 등록 또는 수정 요청 처리
     const handleSubmit = async () => {
         try {
             if (editingNotice) {
+                // ✅ 수정 요청
                 const res = await axios.put(`/api/notices/${editingNotice.id}`, form);
                 setNotices((prev) =>
                     prev.map((n) => (n.id === editingNotice.id ? res.data : n))
                 );
             } else {
+                // ✅ 신규 등록 요청
                 const res = await axios.post("/api/notices", form);
                 setNotices((prev) => [res.data, ...prev]);
             }
@@ -82,7 +84,7 @@ export default function Notice() {
             <main className="max-w-3xl mx-auto px-4 py-10">
                 <h1 className="text-3xl font-bold mb-6 text-center">공지사항</h1>
 
-                {/* ✅ 로그인 + super admin만 공지 등록 버튼 보임 */}
+                {/* ✅ 로그인 + super admin만 공지 등록 버튼 표시 */}
                 {isLoggedIn && isSuperAdmin && (
                     <div className="mb-6 text-right">
                         <button
@@ -107,7 +109,7 @@ export default function Notice() {
                                     작성일: {new Date(notice.created_at).toLocaleString()}
                                 </p>
 
-                                {/* ✅ 로그인 + super admin만 수정/삭제 버튼 보임 */}
+                                {/* ✅ 로그인 + super admin만 수정/삭제 버튼 표시 */}
                                 {isLoggedIn && isSuperAdmin && (
                                     <div className="mt-2 flex gap-4">
                                         <button
@@ -134,7 +136,7 @@ export default function Notice() {
                 )}
             </main>
 
-            {/* ✅ 모달은 로그인 + super admin인 경우에만 열 수 있음 */}
+            {/* ✅ 모달은 로그인 + super admin만 접근 가능 */}
             {isLoggedIn && isSuperAdmin && showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">

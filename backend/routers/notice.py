@@ -1,41 +1,78 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+# backend/routers/notice.py
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from backend.schemas.notice import NoticeOut, NoticeCreate, NoticeUpdate
-from backend.models.notice import Notice
 from backend.database.database import get_db
-from backend.dependencies.admin_auth import get_super_admin_user
+from backend.models.notice import Notice
+from backend.schemas.notice import NoticeCreate, NoticeUpdate, NoticeOut
+from backend.dependencies.admin_auth import get_current_user
 from backend.models.user import User
+from uuid import uuid4
+from typing import List
 
-router = APIRouter()
+router = APIRouter(prefix="/api/notices", tags=["공지사항"])
 
-@router.get("/api/notices", response_model=list[NoticeOut])
+# ✅ 공지사항 전체 조회 (모든 사용자 접근 가능)
+@router.get("/", response_model=List[NoticeOut])
 def get_notices(db: Session = Depends(get_db)):
     return db.query(Notice).order_by(Notice.created_at.desc()).all()
 
-@router.post("/api/notices", response_model=NoticeOut, status_code=status.HTTP_201_CREATED)
-def create_notice(notice: NoticeCreate, db: Session = Depends(get_db), current_user: User = Depends(get_super_admin_user)):
-    new_notice = Notice(title=notice.title, content=notice.content, created_by=current_user.user_id)
+# ✅ 공지사항 생성 (super admin만 가능)
+@router.post("/", response_model=NoticeOut)
+def create_notice(
+    notice_in: NoticeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_super_admin:
+        raise HTTPException(status_code=403, detail="권한이 없습니다.")  # ✅ 권한 확인
+
+    new_notice = Notice(
+        id=str(uuid4()),  # ✅ UUID 생성
+        title=notice_in.title,
+        content=notice_in.content,
+        creator_id=current_user.id  # ✅ FK 연결
+    )
     db.add(new_notice)
     db.commit()
     db.refresh(new_notice)
     return new_notice
 
-@router.put("/api/notices/{notice_id}", response_model=NoticeOut)
-def update_notice(notice_id: int, notice: NoticeUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_super_admin_user)):
-    db_notice = db.query(Notice).filter(Notice.id == notice_id).first()
-    if not db_notice:
-        raise HTTPException(status_code=404, detail="Notice not found")
-    db_notice.title = notice.title
-    db_notice.content = notice.content
-    db.commit()
-    db.refresh(db_notice)
-    return db_notice
+# ✅ 공지사항 수정 (super admin만 가능)
+@router.put("/{notice_id}", response_model=NoticeOut)
+def update_notice(
+    notice_id: str,
+    notice_in: NoticeUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_super_admin:
+        raise HTTPException(status_code=403, detail="권한이 없습니다.")
 
-@router.delete("/api/notices/{notice_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_notice(notice_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_super_admin_user)):
-    db_notice = db.query(Notice).filter(Notice.id == notice_id).first()
-    if not db_notice:
-        raise HTTPException(status_code=404, detail="Notice not found")
-    db.delete(db_notice)
+    notice = db.query(Notice).filter(Notice.id == notice_id).first()
+    if not notice:
+        raise HTTPException(status_code=404, detail="공지사항을 찾을 수 없습니다.")
+
+    notice.title = notice_in.title
+    notice.content = notice_in.content
     db.commit()
-    return None
+    db.refresh(notice)
+    return notice
+
+# ✅ 공지사항 삭제 (super admin만 가능)
+@router.delete("/{notice_id}")
+def delete_notice(
+    notice_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_super_admin:
+        raise HTTPException(status_code=403, detail="권한이 없습니다.")
+
+    notice = db.query(Notice).filter(Notice.id == notice_id).first()
+    if not notice:
+        raise HTTPException(status_code=404, detail="공지사항을 찾을 수 없습니다.")
+
+    db.delete(notice)
+    db.commit()
+    return {"message": "삭제 완료"}

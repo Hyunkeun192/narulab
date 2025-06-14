@@ -14,15 +14,16 @@ class UserReport(Base):  # 기존: class Report(Base)
 
     report_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
+    # ✅ 외래키 수정: user_id → users.id를 참조해야 정상 동작
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     test_id = Column(UUID(as_uuid=True), ForeignKey("tests.test_id"), nullable=False)
 
     score = Column(Integer, nullable=False)        # ✅ 정답 기반 점수 (0~100)
     sten = Column(Integer, nullable=False)         # ✅ STEN 등급 (1~10)
     description = Column(String, nullable=False)   # ✅ 해석 문구
 
-    created_at = Column(String, default=lambda: datetime.now().isoformat())
+    created_at = Column(String, default=lambda: datetime.now().isoformat())  # ✅ 문자열로 저장
 
-    # ✅ 관계 설정 (옵션)
+    # ✅ 관계 설정
     user = relationship("User", back_populates="reports")
     test = relationship("Test", back_populates="user_reports")

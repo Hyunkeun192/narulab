@@ -21,9 +21,9 @@ from .test import Test
 from .test_question_links import TestQuestionLink
 
 # ✅ 검사 결과 및 분석
-from .response import UserReport
+from .response import UserTestHistory
 from .report_rule import ReportRule
-from .report_sten_distribution import ReportStenDistribution
+from .report_sten_distribution import ReportSTENDistribution
 from .sten_rule import STENRule
 from .scoring_rule import ScoringRule
 from .test_analytics_by_group import TestAnalyticsByGroup

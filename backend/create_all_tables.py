@@ -13,7 +13,7 @@ from backend.models.test_analytics_by_group import TestAnalyticsByGroup
 from backend.models.question_stats_by_group import QuestionStatsByGroup
 from backend.models.notice import Notice
 from backend.models.qna import QnA
-from backend.models.response import UserReport  # ✅ UserReport 명시적 import
+from backend.models.response import UserTestHistory  # ✅ UserTestHistory 명시적 import
 
 from backend import models
 

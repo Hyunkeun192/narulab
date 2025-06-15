@@ -6,8 +6,8 @@ from uuid import UUID
 from typing import List
 from backend.database.database import get_db  # ✅ 수정된 get_db 경로
 from backend.schemas.response import ResponseSubmit, ReportResult  # ✅ 수정된 스키마 import
-# ✅ Report → UserReport로 클래스명 변경
-from backend.models.response import UserReport  # ✅ 결과 리포트 저장용 모델
+# ✅ Report → UserTestHistory로 클래스명 변경
+from backend.models.response import UserTestHistory  # ✅ 결과 리포트 저장용 모델
 from backend.models.test import Test
 from backend.models.option import Option
 from backend.models.norm_group import NormGroup  # ✅ 규준 그룹 정보
@@ -67,7 +67,7 @@ def submit_response(payload: ResponseSubmit, db: Session = Depends(get_db)):
     description = rule_obj.sten_descriptions.get(str(sten), "해석 정보 없음")
 
     # ✅ 4. 리포트 저장
-    report = UserReport(  # ✅ Report → UserReport 이름 변경
+    report = UserTestHistory(  # ✅ Report → UserTestHistory 이름 변경
         user_id=payload.user_id,
         test_id=payload.test_id,
         score=raw_score,

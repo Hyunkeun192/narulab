@@ -5,8 +5,8 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from uuid import UUID
 from backend.database.database import get_db
-# ✅ Report → UserReport로 클래스명 변경
-from backend.models.response import UserReport
+# ✅ Report → UserTestHistory로 클래스명 변경
+from backend.models.response import UserTestHistory
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 import os
@@ -20,7 +20,7 @@ router = APIRouter(
 # ✅ 리포트 PDF 다운로드 (학교/기업 관리자 전용)
 @router.get("/pdf/{report_id}")
 def download_report_pdf(report_id: UUID, db: Session = Depends(get_db)):
-    report = db.query(UserReport).filter(UserReport.report_id == report_id).first()  # ✅ Report → UserReport 이름 변경
+    report = db.query(UserTestHistory).filter(UserTestHistory.report_id == report_id).first()  
 
     if not report:
         raise HTTPException(status_code=404, detail="리포트를 찾을 수 없습니다.")

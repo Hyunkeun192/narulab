@@ -25,14 +25,14 @@ class Test(Base):
     version_note = Column(Text)
 
     question_count = Column(Integer, default=0)  # ✅ 예상 문항 수
-    is_published = Column(Boolean, default=False)  # ✅ 완성 검사 여부
+    is_published = Column(Boolean, default=False)  # ✅ 공개 여부
     duration_minutes = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # ✅ 관계 설정
     questions = relationship("Question", back_populates="test")
-    reports = relationship("TestReport", back_populates="test", overlaps="user_test_histories")
-    user_test_histories = relationship("UserTestHistory", back_populates="test", overlaps="reports")  # ✅ 명확한 클래스 사용
+    reports = relationship("TestReport", back_populates="test", overlaps="user_reports")
+    user_reports = relationship("UserTestHistory", back_populates="test", overlaps="reports")
 
 # ✅ 문항 유형 enum
 class QuestionTypeEnum(str, enum.Enum):
@@ -52,11 +52,12 @@ class Response(Base):
     response_time_sec = Column(Float)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# ✅ 검사 리포트 테이블
+# ✅ 검사 리포트 테이블 (분석용)
 class TestReport(Base):
-    __tablename__ = "reports"
+    __tablename__ = "test_reports"
 
     report_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)  # ✅ 사용자 ID 필드 추가
     email = Column(String(255), nullable=False)
     test_id = Column(String(36), ForeignKey("tests.test_id"))
     score_total = Column(Float)
@@ -66,4 +67,21 @@ class TestReport(Base):
     report_generated_at = Column(DateTime, default=datetime.utcnow)
 
     # ✅ 관계 설정
-    test = relationship("Test", back_populates="reports", overlaps="user_test_histories")
+    test = relationship("Test", back_populates="reports", overlaps="user_reports")
+    user = relationship("User", back_populates="test_reports")  # ✅ 사용자와의 관계 추가
+
+# ✅ 사용자 개별 리포트 테이블
+class UserTestHistory(Base):
+    __tablename__ = "user_reports"
+    __table_args__ = {"extend_existing": True}  # ✅ 중복 정의 허용
+
+
+    report_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)  # ✅ 외래키 지정
+    email = Column(String(255), nullable=False)
+    test_id = Column(String(36), ForeignKey("tests.test_id"))
+    result_detail = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    test = relationship("Test", back_populates="user_reports", overlaps="reports,test")
+    user = relationship("User", back_populates="user_test_histories")  # ✅ 사용자 연결

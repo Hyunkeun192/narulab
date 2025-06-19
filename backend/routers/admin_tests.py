@@ -7,6 +7,7 @@ from backend.database.database import get_db
 from backend.models.test import Test
 from backend.models.question import Question
 from backend.models.option import Option
+from backend.schemas.question_create import OptionItem  # ✅ Pydantic 변환용 모델
 from backend.schemas.test_detail import TestDetailResponse, QuestionWithOptions
 from backend.schemas.test_create import TestCreateRequest, TestCreateResponse
 from backend.schemas.test_add_question import AddQuestionRequest, AddQuestionResponse
@@ -50,37 +51,45 @@ def get_test_detail(
     test_id: UUID,
     db: Session = Depends(get_db)
 ):
-    test = db.query(Test).filter(Test.test_id == test_id).first()
+    test = db.query(Test).filter(Test.test_id == str(test_id)).first()  # UUID → str 변환
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
-
+    
     questions = (
         db.query(Question)
-        .filter(Question.test_id == test_id)
+        .filter(Question.test_id == str(test_id))  # UUID → str 변환
         .order_by(Question.order_index)
         .all()
     )
 
     question_items: List[QuestionWithOptions] = []
 
-    for q in questions:
-        options = (
-            db.query(Option)
-            .filter(Option.question_id == q.question_id)
-            .order_by(Option.option_order)
-            .all()
-        )
-
-        question_items.append(
-            QuestionWithOptions(
-                question_id=q.question_id,
-                question_text=q.question_text,
-                question_type=q.question_type,
-                is_multiple_choice=q.is_multiple_choice,
-                status=q.status,
-                options=options
+    for q in test.questions:
+        option_items = [
+            OptionItem(
+                option_id=o.option_id,
+                option_order=o.option_order,
+                option_text=o.option_text,
+                is_correct=o.is_correct,
+                option_image_url=o.option_image_url
             )
+        for o in q.options
+        ]
+
+    questions.append(
+        QuestionWithOptions(
+            question_id=q.question_id,
+            question_name=q.question_name,
+            question_text=q.question_text,
+            instruction=q.instruction,
+            question_type=q.question_type,
+            is_multiple_choice=q.is_multiple_choice,
+            correct_explanation=q.correct_explanation,
+            wrong_explanation=q.wrong_explanation,
+            status=q.status,  # ✅ 누락된 필드 보완
+            options=option_items
         )
+    )
 
     return TestDetailResponse(
         test_id=test.test_id,
@@ -88,7 +97,7 @@ def get_test_detail(
         test_type=test.test_type,
         version=test.version,
         duration_minutes=test.duration_minutes,
-        questions=question_items
+        questions=questions  # ✅ 응답 필드와 변수 이름 일치
     )
 
 # ✅ 검사 등록 API
@@ -157,7 +166,7 @@ def remove_questions_from_test(
     request: RemoveQuestionRequest,
     db: Session = Depends(get_db)
 ):
-    test = db.query(Test).filter(Test.test_id == test_id).first()
+    test = db.query(Test).filter(Test.test_id == str(test_id)).first()  # ← 수정 필요
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
@@ -166,7 +175,7 @@ def remove_questions_from_test(
     for question_id in request.question_ids:
         question = db.query(Question).filter(
             Question.question_id == question_id,
-            Question.test_id == test_id
+            Question.test_id == str(test_id)  # ✅ 문자열로 변환
         ).first()
         if question:
             question.test_id = None

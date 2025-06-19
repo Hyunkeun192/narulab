@@ -12,7 +12,9 @@ class OptionItem(BaseModel):
     option_order: int                    # 보기 순서
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 # 🔸 문항 + 선택지 스키마
 class QuestionWithOptions(BaseModel):
@@ -24,7 +26,9 @@ class QuestionWithOptions(BaseModel):
     options: List[OptionItem]            # 하위 선택지 목록
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 # 🔸 검사 상세 구성 응답 스키마
 class TestDetailResponse(BaseModel):
@@ -36,4 +40,6 @@ class TestDetailResponse(BaseModel):
     questions: List[QuestionWithOptions]  # 연결된 문항 목록
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }

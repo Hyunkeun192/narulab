@@ -1,5 +1,3 @@
-# backend/routers/notice.py
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database.database import get_db
@@ -24,14 +22,15 @@ def create_notice(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if not current_user.is_super_admin:
-        raise HTTPException(status_code=403, detail="권한이 없습니다.")  # ✅ 권한 확인
+    # ✅ [수정] 기존: current_user.is_super_admin → role 필드 기반으로 명시적 확인
+    if current_user.role != "super_admin":
+        raise HTTPException(status_code=403, detail="권한이 없습니다.")
 
     new_notice = Notice(
         id=str(uuid4()),  # ✅ UUID 생성
         title=notice_in.title,
         content=notice_in.content,
-        creator_id=current_user.id  # ✅ FK 연결
+        creator_id=current_user.user_id  # ✅ [수정] 필드명 user_id로 통일
     )
     db.add(new_notice)
     db.commit()
@@ -46,7 +45,8 @@ def update_notice(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if not current_user.is_super_admin:
+    # ✅ [수정] 권한 확인 방식 변경: role 필드 기반 확인
+    if current_user.role != "super_admin":
         raise HTTPException(status_code=403, detail="권한이 없습니다.")
 
     notice = db.query(Notice).filter(Notice.id == notice_id).first()
@@ -66,7 +66,8 @@ def delete_notice(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if not current_user.is_super_admin:
+    # ✅ [수정] 권한 확인 방식 변경: role 필드 기반 확인
+    if current_user.role != "super_admin":
         raise HTTPException(status_code=403, detail="권한이 없습니다.")
 
     notice = db.query(Notice).filter(Notice.id == notice_id).first()

@@ -28,4 +28,6 @@ class NormGroupResponse(BaseModel):
     description: Optional[str]
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }

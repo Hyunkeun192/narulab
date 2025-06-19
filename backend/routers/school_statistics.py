@@ -34,7 +34,7 @@ def download_school_user_reports(
         User.is_active == True
     ).all()
 
-    user_emails = [u.encrypted_email for u in users]  # ✅ 사용자 email 기준 필터링용
+    user_emails = [u.email for u in users]  # ✅ 사용자 email 기준 필터링용
 
     reports = db.query(TestReport).filter(TestReport.email.in_(user_emails)).all()  # ✅ Report → TestReport
     tests = {t.test_id: t.test_name for t in db.query(Test).all()}
@@ -52,7 +52,7 @@ def download_school_user_reports(
     report_rows = []
     for r in reports:
         report_rows.append({
-            "user_id": next((u.user_id for u in users if u.encrypted_email == r.email), "unknown"),
+            "user_id": next((u.user_id for u in users if u.email == r.email), "unknown"),
             f"{tests.get(r.test_id, 'Unknown')}_score": r.score_total,
             f"{tests.get(r.test_id, 'Unknown')}_date": r.report_generated_at.strftime("%Y-%m-%d")
         })

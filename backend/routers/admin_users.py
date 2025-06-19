@@ -30,7 +30,7 @@ def get_user_list(
         query = query.filter(
             or_(
                 User.nickname.ilike(f"%{keyword}%"),
-                User.encrypted_email.ilike(f"%{keyword}%")
+                User.email.ilike(f"%{keyword}%")
             )
         )
 
@@ -47,15 +47,15 @@ def create_admin_user(
     db: Session = Depends(get_db)
 ):
     # 이메일 중복 확인
-    existing = db.query(User).filter(User.encrypted_email == request.encrypted_email).first()
+    existing = db.query(User).filter(User.email == request.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="해당 이메일로 등록된 사용자가 이미 존재합니다.")
 
     new_admin = User(
-        encrypted_email=request.encrypted_email,
-        encrypted_phone_number=request.encrypted_phone_number,
+        email=request.email,
+        phone=request.phone,
         nickname=request.nickname,
-        hashed_password=request.hashed_password,
+        password=request.password,
         is_admin=True  # ✅ 관리자 권한 설정
     )
     db.add(new_admin)

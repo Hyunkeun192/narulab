@@ -1,0 +1,28 @@
+{
+  "question_text": "하늘이 맑은 날 나는 무엇을 했는가?",
+  "question_type": "reading",
+  "is_multiple_choice": false,
+  "instruction": "문장을 읽고 알맞은 의미를 고르세요.",
+  "correct_explanation": "날씨와 감정이 연결된 상황입니다.",
+  "wrong_explanation": "문맥에 맞지 않는 해석입니다.",
+  "question_image_url": null,
+  "question_name": "문학_001",
+  "test_id": null,
+  "options": [
+    {
+      "option_text": "기분이 좋았다",
+      "is_correct": true,
+      "option_image_url": null
+    },
+    {
+      "option_text": "슬펐다",
+      "is_correct": false,
+      "option_image_url": null
+    },
+    {
+      "option_text": "화가 났다",
+      "is_correct": false,
+      "option_image_url": null
+    }
+  ]
+}

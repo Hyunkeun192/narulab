@@ -28,7 +28,9 @@ class ReportSummary(BaseModel):
     report_generated_at: datetime
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 # ✅ 리포트 상세 응답 스키마
 class ReportDetail(BaseModel):
@@ -40,7 +42,9 @@ class ReportDetail(BaseModel):
     result_summary: str
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 # ✅ 리포트 목록 조회 API
 @router.get("/api/reports/me", response_model=List[ReportSummary])

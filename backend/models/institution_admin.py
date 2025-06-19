@@ -16,11 +16,12 @@ class InstitutionAdmin(Base):
     institution_type = Column(String(50), nullable=False)          # ✅ 기관 종류 (예: 학교, 기업)
     institution_name = Column(String(100), nullable=False)         # ✅ 기관 이름
 
-    # 🔧 ForeignKey 수정됨: 기존 users.user_id → users.id (User 모델 통일 기준에 맞춤)
-    user_id = Column(Integer, ForeignKey("users.id"))              # ✅ 사용자 테이블의 id 참조
+    # 🔧 수정됨: 외래키 참조를 users.user_id로 변경하고 타입을 String(36)으로 일치시킴
+    user_id = Column(String(36), ForeignKey("users.user_id"))      # ✅ UUID 기반 사용자 식별자 참조
 
     created_at = Column(DateTime, default=datetime.utcnow)         # ✅ 생성 시각
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # ✅ 수정 시각
 
-    # ✅ 관계 설정: User → InstitutionAdmin
-    user = relationship("User", backref="institution_admin")       # ✅ user.institution_admin 역참조 가능
+    # 🔁 관계 설정은 기존 구조 유지
+    # ✅ user.institution_admin으로 접근 가능하며, users.user_id 기준으로 연결됨
+    user = relationship("User", backref="institution_admin")

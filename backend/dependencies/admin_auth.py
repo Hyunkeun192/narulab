@@ -33,12 +33,12 @@ def get_current_user(
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-# ✅ 관리자 인증 의존성
+# ✅ 관리자 인증 의존성 (방법 1 적용)
 def get_current_admin_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> User:
-    if not current_user.is_admin:
+    if current_user.role not in ("super_admin", "content_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="관리자 권한이 필요합니다."
@@ -51,4 +51,15 @@ def get_super_admin_user(
 ) -> User:
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="슈퍼 관리자만 접근할 수 있습니다.")
+    return current_user
+
+# ✅ 🔧 super_admin 또는 content_admin 권한 허용
+def get_content_or_super_admin_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    if current_user.role not in ("super_admin", "content_admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="접근 권한이 없습니다 (super_admin 또는 content_admin만 가능)"
+        )
     return current_user

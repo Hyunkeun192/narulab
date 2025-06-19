@@ -14,7 +14,9 @@ class SubscribeStatus(BaseModel):
     next_payment_due: str  # 예: YYYY-MM-DD or "-" if 없음
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 
 # ✅ 구독 상태 조회 API

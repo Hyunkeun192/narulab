@@ -11,7 +11,9 @@ class AIQuestionListItem(BaseModel):
     status: QuestionStatus
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 # 🔸 AI 문항 상세 조회 응답 스키마
 class AIQuestionDetail(BaseModel):
@@ -25,7 +27,9 @@ class AIQuestionDetail(BaseModel):
     review_comment: Optional[str]
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 # 🔸 승인/반려 요청
 class AIReviewRequest(BaseModel):

@@ -38,4 +38,6 @@ class ScoringRuleResponse(BaseModel):
     created_at: datetime  # ✅ 생성일자 필드 보완
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }

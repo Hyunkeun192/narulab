@@ -24,4 +24,6 @@ class NoticeOut(BaseModel):
     creator_id: str  # 작성자 ID
 
     class Config:
-        orm_mode = True  # ✅ ORM 객체를 그대로 받아도 Pydantic이 변환 가능하게 함
+        model_config = {
+        "from_attributes": True
+    }  # ✅ ORM 객체를 그대로 받아도 Pydantic이 변환 가능하게 함

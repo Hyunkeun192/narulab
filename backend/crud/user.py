@@ -6,19 +6,19 @@ import uuid
 
 # ✅ 암호화된 이메일로 사용자 조회
 # ✅ 수정 완료: 이미 암호화된 이메일을 받아 그대로 조회
-def get_user_by_email(db: Session, encrypted_email: str):
+def get_user_by_email(db: Session, email: str):
     """
     로그인 시 이미 암호화된 이메일 값을 기준으로 사용자 조회
     - 중복 암호화를 방지하기 위해 aes_encrypt 제거
     """
-    return db.query(User).filter(User.encrypted_email == encrypted_email).first()
+    return db.query(User).filter(User.email == email).first()
 
 # ✅ 전화번호로 사용자 조회
 def get_user_by_phone(db: Session, encrypted_phone: str):
-    return db.query(User).filter(User.encrypted_phone_number == encrypted_phone).first()
+    return db.query(User).filter(User.phone == encrypted_phone).first()
 
 # ✅ 사용자 생성 함수
-def create_user(db: Session, user_data: UserCreate, encrypted_email: str, encrypted_phone: str):
+def create_user(db: Session, user_data: UserCreate, email: str, encrypted_phone: str):
     """
     신규 사용자 생성 함수
     - 이메일/전화번호는 암호화되어 전달됨
@@ -26,10 +26,11 @@ def create_user(db: Session, user_data: UserCreate, encrypted_email: str, encryp
     """
     user = User(
         user_id=str(uuid.uuid4()),
-        encrypted_email=encrypted_email,
-        encrypted_phone_number=encrypted_phone,
+        email=email,
+        phone=encrypted_phone,
+        name=user_data.name,  # ✅ 반드시 추가
         nickname=user_data.nickname,
-        hashed_password=hash_password(user_data.password),
+        password=hash_password(user_data.password),
         is_active=True
     )
     db.add(user)

@@ -27,4 +27,6 @@ class QnAOut(QnABase):
     answered_at: Optional[datetime]                    # 답변 작성 시각 (nullable 허용)
 
     class Config:
-        orm_mode = True  # ✅ SQLAlchemy ORM 모델과의 자동 매핑 활성화
+        model_config = {
+        "from_attributes": True
+    }  # ✅ SQLAlchemy ORM 모델과의 자동 매핑 활성화

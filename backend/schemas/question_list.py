@@ -10,7 +10,9 @@ class OptionItem(BaseModel):
     is_correct: bool
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }
 
 # 🔸 문항 목록 출력용 스키마
 class QuestionListItem(BaseModel):
@@ -30,4 +32,6 @@ class QuestionListItem(BaseModel):
     options: List[OptionItem] = []
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }

@@ -22,8 +22,8 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 # ✅ 해시된 비밀번호와 사용자가 입력한 비밀번호를 비교
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, password: str) -> bool:
+    return pwd_context.verify(plain_password, password)
 
 # ✅ AES 암호화 키 준비 (32바이트 키로 SHA256 변환)
 AES_SECRET_KEY = settings.AES_SECRET_KEY  # .env에서 불러옴

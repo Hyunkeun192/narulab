@@ -128,16 +128,18 @@ def add_questions_to_test(
     request: AddQuestionRequest,
     db: Session = Depends(get_db)
 ):
-    test = db.query(Test).filter(Test.test_id == test_id).first()
+    # ✅ UUID → str로 변환하여 비교 (CHAR 필드 호환)
+    test = db.query(Test).filter(Test.test_id == str(test_id)).first()
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
     added_count = 0
 
     for question_id in request.question_ids:
-        question = db.query(Question).filter(Question.question_id == question_id).first()
-        if question:
-            question.test_id = test_id
+        question = db.query(Question).filter(Question.question_id == str(question_id)).first()
+        if question and question.test_id is None:
+            question.test_id = str(test_id)
+            db.add(question)
             added_count += 1
 
     db.commit()
@@ -146,6 +148,7 @@ def add_questions_to_test(
         added_count=added_count,
         message=f"{added_count} questions added to test."
     )
+
 
 # ✅ 검사에서 문항 제거 API
 @router.post("/{test_id}/remove-question", response_model=RemoveQuestionResponse)

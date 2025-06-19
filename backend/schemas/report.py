@@ -15,4 +15,6 @@ class ReportOut(BaseModel):
     created_at: str
 
     class Config:
-        orm_mode = True
+        model_config = {
+        "from_attributes": True
+    }

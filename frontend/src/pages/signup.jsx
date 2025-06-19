@@ -143,7 +143,7 @@ export default function SignupPage() {
                 email,
                 password,
                 password_confirm: passwordConfirm,
-                phone_number: phoneNumber,
+                phone: phoneNumber,
                 nickname: finalNickname,
             });
             navigate("/login");

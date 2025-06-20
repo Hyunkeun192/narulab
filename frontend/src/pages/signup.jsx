@@ -32,17 +32,17 @@ export default function SignupPage() {
     const [emailExists, setEmailExists] = useState(false);
     const [password, setPassword] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
+    const [phone, setPhone] = useState("");
     const [phoneExists, setPhoneExists] = useState(false);
     const [nickname, setNickname] = useState("");
     const [nicknameCandidates, setNicknameCandidates] = useState([]);
+    const [name, setName] = useState(""); // ✅ 이름 입력값 상태 추가
     const [selectedNickname, setSelectedNickname] = useState("");
     const [nicknameExists, setNicknameExists] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [agreed, setAgreed] = useState(false); // ✅ 스크롤 동의 여부
     const [agreedOptional, setAgreedOptional] = useState(false); // 선택 동의 여부
-
 
     useEffect(() => {
         setNicknameCandidates(generateNicknames());
@@ -104,12 +104,12 @@ export default function SignupPage() {
     // ✅ 전화번호 중복 확인 디바운스 (0.5초)
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (phoneNumber.length >= 10) {
-                checkPhoneNumberDuplicate(phoneNumber);
+            if (phone.length >= 10) {
+                checkPhoneNumberDuplicate(phone);
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [phoneNumber]);
+    }, [phone]);
 
     // ✅ 스크롤 참조 및 이벤트 처리
     const scrollRef = useRef(null);
@@ -123,7 +123,7 @@ export default function SignupPage() {
     const goToNextStep = () => {
         if (step === 1 && emailValid && !emailExists) setStep(2);
         else if (step === 2 && isPasswordValid()) setStep(3);
-        else if (step === 3 && phoneNumber && !phoneExists) setStep(4);
+        else if (step === 3 && phone && !phoneExists) setStep(4);
     };
 
     // ✅ 최종 회원가입 제출 함수
@@ -143,8 +143,9 @@ export default function SignupPage() {
                 email,
                 password,
                 password_confirm: passwordConfirm,
-                phone: phoneNumber,
+                phone: phone,
                 nickname: finalNickname,
+                name: name,
             });
             navigate("/login");
         } catch (err) {
@@ -317,8 +318,8 @@ export default function SignupPage() {
                             <input
                                 type="text"
                                 placeholder="휴대폰 번호"
-                                value={formatPhoneNumber(phoneNumber)}
-                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                                value={formatPhoneNumber(phone)}
+                                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                                 className="w-full px-4 py-2 border border-[#CCCCCC] rounded-lg text-sm"
                             />
                             {phoneExists && (
@@ -326,7 +327,7 @@ export default function SignupPage() {
                             )}
                             <button
                                 onClick={goToNextStep}
-                                disabled={!phoneNumber || phoneExists}
+                                disabled={!phone || phoneExists}
                                 className="w-full mt-8 bg-[#007AFF] text-white py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
                             >
                                 다음

@@ -81,7 +81,6 @@ export default function QuestionForm() {
         setError("");
 
         try {
-            // ✅ test_id 없이 문항 풀로 등록
             const payload = {
                 instruction,
                 question_text: questionText,
@@ -92,6 +91,7 @@ export default function QuestionForm() {
                 wrong_explanation: wrongExplanation,
                 question_name: questionName,
                 options,
+                usage_type: "aptitude", // ✅ 적성검사 등록용으로 고정 입력
             };
 
             await axios.post("/api/admin/questions", payload, {
@@ -108,7 +108,7 @@ export default function QuestionForm() {
             setLoading(false);
         }
     };
-
+    
     return (
         <div className="max-w-3xl mx-auto px-4 py-10">
             <h1 className="text-2xl font-bold mb-6">문항 등록</h1>

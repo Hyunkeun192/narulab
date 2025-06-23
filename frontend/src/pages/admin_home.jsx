@@ -8,7 +8,7 @@ export default function AdminHome() {
     return (
         <div className="flex min-h-screen">
             {/* ✅ 좌측 사이드 메뉴 */}
-            <aside className="w-40 bg-gray-100 p-6 border-r">
+            <aside className="w-52 flex-shrink-0 bg-gray-100 p-7 border-r">
                 <h2 className="text-lg font-semibold mb-4">관리자 메뉴</h2>
                 <nav className="flex flex-col gap-3 text-sm">
                     <Link to="/admin/tests/manage" className="hover:text-blue-500">검사 구성 관리</Link>
@@ -19,7 +19,6 @@ export default function AdminHome() {
                     <Link to="/admin/norms" className="hover:text-blue-500">STEN 설정</Link>
                     <Link to="/admin/statistics/sten" className="hover:text-blue-500">STEN 통계</Link>
                     <Link to="/admin/reports/manage" className="hover:text-blue-500">리포트 기준 설정</Link>
-                    
                 </nav>
             </aside>
 

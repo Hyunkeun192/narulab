@@ -77,7 +77,7 @@ export default function QuestionList() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto px-4 py-10">
+        <div className="w-full px-6 py-10">
             <h1 className="text-2xl font-bold mb-6">문항 목록</h1>
 
             {/* ✅ 메시지 출력 */}

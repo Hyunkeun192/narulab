@@ -1,14 +1,12 @@
-// src/pages/admin/aptitude/QuestionList.jsx
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 /**
  * ✅ 문항 목록 페이지 (리스트 중심 + 필터/검색/모달 보기 지원)
- * - 검사 유형 필터 (usage_type: aptitude/personality 등)
- * - 검색 (문항명, 텍스트)
- * - 요약 카드 기반 리스트
- * - 모달로 문항 상세 보기
+ * - 카드 방식 → 리스트 1행 요약형으로 변경
+ * - 필터: usage_type (적성/인성 등)
+ * - 검색: 문항명, 문항 내용 등 텍스트
+ * - 상세보기: 클릭 시 모달로 문항 정보 표시
  */
 export default function QuestionList() {
     const [questions, setQuestions] = useState([]);
@@ -18,7 +16,7 @@ export default function QuestionList() {
     const [search, setSearch] = useState("");
     const [message, setMessage] = useState("");
 
-    // ✅ 문항 목록 로드
+    // ✅ 문항 목록 로드 (최초 실행 시)
     const fetchQuestions = async () => {
         try {
             const res = await axios.get("/api/admin/questions", {
@@ -37,7 +35,7 @@ export default function QuestionList() {
         fetchQuestions();
     }, []);
 
-    // ✅ 필터/검색 반영
+    // ✅ 필터/검색 적용
     useEffect(() => {
         let result = [...questions];
 
@@ -58,7 +56,7 @@ export default function QuestionList() {
         setFiltered(result);
     }, [examType, search, questions]);
 
-    // ✅ 문항 삭제
+    // ✅ 문항 삭제 처리
     const handleDelete = async (id) => {
         const confirm = window.confirm("정말 이 문항을 삭제하시겠습니까?");
         if (!confirm) return;
@@ -70,20 +68,20 @@ export default function QuestionList() {
                 },
             });
             setMessage("문항이 삭제되었습니다.");
-            fetchQuestions();
+            fetchQuestions(); // 삭제 후 목록 갱신
         } catch {
             setMessage("삭제 중 오류가 발생했습니다.");
         }
     };
 
     return (
-        <div className="w-full px-6 py-10">
+        <div className="max-w-6xl mx-auto px-4 py-10">
             <h1 className="text-2xl font-bold mb-6">문항 목록</h1>
 
             {/* ✅ 메시지 출력 */}
             {message && <p className="text-blue-600 text-sm mb-4">{message}</p>}
 
-            {/* ✅ 필터/검색 영역 */}
+            {/* ✅ 필터/검색 UI */}
             <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
                 <select
                     value={examType}
@@ -104,25 +102,34 @@ export default function QuestionList() {
                 />
             </div>
 
+            {/* ✅ 리스트 헤더 */}
+            <div className="grid grid-cols-5 gap-2 px-2 py-2 font-semibold text-gray-700 border-b bg-gray-50">
+                <div>검사유형</div>
+                <div>문항유형</div>
+                <div>문항명</div>
+                <div className="text-center">상세보기</div>
+                <div className="text-center">삭제</div>
+            </div>
+
             {/* ✅ 문항 리스트 */}
-            <div className="space-y-4">
+            <div className="divide-y">
                 {filtered.map((q) => (
-                    <div key={q.question_id} className="border p-4 rounded shadow-sm bg-white">
-                        <div className="text-sm text-gray-500 mb-1">
-                            검사유형: {q.usage_type} | 문항유형: {q.question_type} | 복수정답:{" "}
-                            {q.is_multiple_choice ? "O" : "X"}
-                        </div>
-                        <div className="font-semibold text-base">{q.question_name}</div>
-                        <div className="text-sm text-gray-600 truncate">
-                            {q.instruction?.slice(0, 100)}
-                        </div>
-                        <div className="mt-2 flex gap-4 text-sm">
+                    <div
+                        key={q.question_id}
+                        className="grid grid-cols-5 gap-2 items-center px-2 py-3 text-sm"
+                    >
+                        <div>{q.usage_type}</div>
+                        <div>{q.question_type}</div>
+                        <div>{q.question_name}</div>
+                        <div className="text-center">
                             <button
                                 onClick={() => setSelectedQuestion(q)}
                                 className="text-blue-600 hover:underline"
                             >
                                 상세 보기
                             </button>
+                        </div>
+                        <div className="text-center">
                             <button
                                 onClick={() => handleDelete(q.question_id)}
                                 className="text-red-500 hover:underline"
@@ -132,10 +139,14 @@ export default function QuestionList() {
                         </div>
                     </div>
                 ))}
-                {filtered.length === 0 && (
-                    <p className="text-gray-500 text-center">조건에 해당하는 문항이 없습니다.</p>
-                )}
             </div>
+
+            {/* ✅ 조건 불만족 시 안내 */}
+            {filtered.length === 0 && (
+                <p className="text-gray-500 text-center mt-4">
+                    조건에 해당하는 문항이 없습니다.
+                </p>
+            )}
 
             {/* ✅ 상세 보기 모달 */}
             {selectedQuestion && (
@@ -144,6 +155,9 @@ export default function QuestionList() {
                         <h2 className="text-xl font-bold mb-4">문항 상세 보기</h2>
                         <p className="mb-1 text-sm text-gray-500">
                             검사유형: {selectedQuestion.usage_type}
+                        </p>
+                        <p className="mb-1 text-sm text-gray-500">
+                            문항유형: {selectedQuestion.question_type}
                         </p>
                         <p className="font-semibold">{selectedQuestion.question_name}</p>
                         <p className="whitespace-pre-line mb-2">{selectedQuestion.instruction}</p>
@@ -162,7 +176,8 @@ export default function QuestionList() {
                         <p className="text-xs text-gray-500 mb-4">
                             오답 해설: {selectedQuestion.wrong_explanation || "없음"}
                         </p>
-                        <div className="text-right">
+                        <div className="text-right flex gap-2 justify-end">
+                            {/* ✅ 수정 기능은 추후 연결 가능 */}
                             <button
                                 onClick={() => setSelectedQuestion(null)}
                                 className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"

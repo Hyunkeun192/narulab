@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogIn, LogOut, Shield } from "lucide-react"; // ✅ 관리자 아이콘
+import { LogIn, LogOut } from "lucide-react"; // ✅ 로그인/로그아웃 아이콘
 import logo from "../assets/logo.png"; // ✅ 로고 이미지
 
 export default function Header() {
@@ -50,16 +50,28 @@ export default function Header() {
 
             {/* ✅ 가운데: 공통 네비게이션 메뉴 + 관리자 메뉴 조건부 포함 */}
             <nav
-                className="flex flex-nowrap justify-center w-full gap-x-10 text-sm sm:text-base font-medium"
+                className="flex flex-nowrap justify-center w-full gap-x-6 text-sm sm:text-base font-medium"
             >
-                <Link to="/notice" className="w-12 text-center">Notice</Link>
-                <Link to="/product" className="w-12 text-center">Product</Link>
-                <Link to="/qna" className="w-12 text-center">QnA</Link>
-                <Link to="/contact" className="w-12 text-center">Contact</Link>
+                {/* ✅ 모든 메뉴 항목에 동일한 스타일 적용하여 클릭 영역 확보 */}
+                <Link to="/notice" className="inline-flex items-center justify-center px-2 py-1 whitespace-nowrap text-center hover:underline">
+                    Notice
+                </Link>
+                <Link to="/product" className="inline-flex items-center justify-center px-2 py-1 whitespace-nowrap text-center hover:underline">
+                    Product
+                </Link>
+                <Link to="/qna" className="inline-flex items-center justify-center px-2 py-1 whitespace-nowrap text-center hover:underline">
+                    QnA
+                </Link>
+                <Link to="/contact" className="inline-flex items-center justify-center px-2 py-1 whitespace-nowrap text-center hover:underline">
+                    Contact
+                </Link>
 
-                {/* ✅ 관리자 로그인 시에만 중앙 메뉴에 표시 */}
+                {/* ✅ 관리자 로그인 시에만 Admin 메뉴 항목 표시 (같은 스타일 유지) */}
                 {isLoggedIn && isAdmin && (
-                    <Link to="/admin" className="w-12 text-center text-blue-500 hover:underline whitespace-nowrap">
+                    <Link
+                        to="/admin"
+                        className="inline-flex items-center justify-center px-2 py-1 whitespace-nowrap text-blue-500 hover:underline"
+                    >
                         Admin Page
                     </Link>
                 )}

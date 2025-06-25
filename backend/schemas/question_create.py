@@ -1,15 +1,21 @@
 from pydantic import BaseModel
-from typing import List, Optional, Any
+from typing import List, Optional
 from uuid import UUID
+from enum import Enum  # 🔸 Enum 추가
+
+# 🔸 usage_type enum 정의
+class UsageType(str, Enum):
+    aptitude = "aptitude"
+    personality = "personality"
 
 # 🔸 선택지 요청 스키마
 class OptionItem(BaseModel):
-    option_id: UUID
     option_text: str
     is_correct: bool
-    option_order: int
+    option_order: Optional[int] = None
     option_image_url: Optional[str] = None
-    
+    option_id: Optional[UUID] = None
+
 # 🔸 문항 생성 요청 스키마
 class QuestionCreateRequest(BaseModel):
     test_id: Optional[UUID] = None                # ✅ 필수 → 선택으로 변경
@@ -18,6 +24,9 @@ class QuestionCreateRequest(BaseModel):
     question_type: str                            # text / image 등
     is_multiple_choice: bool
     options: List[OptionItem]
+
+    # ✅ 추가: 적성/인성 구분
+    usage_type: UsageType                         # 🔸 aptitude / personality
 
     # ✅ 지시문 (지문)
     instruction: Optional[str] = None             # 예: "다음을 읽고 물음에 답하시오"

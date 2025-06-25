@@ -10,17 +10,16 @@ from backend.schemas.question_review import QuestionReviewRequest, QuestionRevie
 from backend.schemas.question_list import QuestionListItem
 from backend.schemas.question_create import QuestionCreateRequest, QuestionCreateResponse
 
-# ✅ 관리자 인증 의존성 (변경)
+# ✅ 관리자 인증 의존성
 from backend.dependencies.admin_auth import get_content_or_super_admin_user
 
-# ✅ 관리자 문항 관련 라우터 정의
 router = APIRouter(
     prefix="/api/admin/questions",
     tags=["Admin - Questions"],
-    dependencies=[Depends(get_content_or_super_admin_user)]  # 🔧 수정: content_admin 허용
+    dependencies=[Depends(get_content_or_super_admin_user)]
 )
 
-# 🔍 AI 문항 승인/반려 처리 API
+# 🔍 문항 승인/반려
 @router.post("/{question_id}/review", response_model=QuestionReviewResponse)
 def review_question(
     question_id: UUID,
@@ -43,7 +42,7 @@ def review_question(
     db.commit()
     return QuestionReviewResponse(message=message)
 
-# 🔍 문항 목록 조회 API (상태별 필터 지원)
+# 🔍 문항 목록 조회
 @router.get("", response_model=List[QuestionListItem])
 def get_questions(
     status: Optional[QuestionStatus] = Query(None),
@@ -54,17 +53,12 @@ def get_questions(
         query = query.filter(Question.status == status)
     return query.order_by(Question.created_at.desc()).all()
 
-# ✅ 문항 등록 API (선택지 포함)
+# ✅ 문항 등록
 @router.post("", response_model=QuestionCreateResponse)
 def create_question(
     request: QuestionCreateRequest,
     db: Session = Depends(get_db)
 ):
-    """
-    ✅ 문항 등록 API
-    - test_id 없이도 등록 가능
-    - 외래키 오류 방지용 조건 포함
-    """
     question_fields = {
         "question_id": uuid4(),
         "question_text": request.question_text,
@@ -75,7 +69,8 @@ def create_question(
         "wrong_explanation": request.wrong_explanation,
         "question_image_url": request.question_image_url,
         "question_name": request.question_name,
-        "status": QuestionStatus.approved  # ✅ 관리자 등록 시 무조건 approved
+        "usage_type": request.usage_type,
+        "status": QuestionStatus.approved
     }
 
     if request.test_id:
@@ -101,4 +96,54 @@ def create_question(
     return QuestionCreateResponse(
         question_id=question.question_id,
         message="Question created successfully."
+    )
+
+# ✅ 문항 수정 (문항 + 선택지 전체 업데이트)
+@router.put("/{question_id}", response_model=QuestionCreateResponse)
+def update_question(
+    question_id: UUID,
+    request: QuestionCreateRequest,
+    db: Session = Depends(get_db)
+):
+    print(f"🚨 update_question 호출됨: question_id = {question_id} ({type(question_id)})")
+
+    # 기존 문항 및 연결된 선택지 제거
+    db.query(Option).filter(Option.question_id == str(question_id)).delete()
+    db.query(Question).filter(Question.question_id == str(question_id)).delete()
+
+    # 새 문항 객체 생성 및 삽입
+    new_question = Question(
+        question_id=str(question_id),
+        test_id=request.test_id,
+        question_text=request.question_text,
+        question_type=request.question_type,
+        is_multiple_choice=request.is_multiple_choice,
+        instruction=request.instruction,
+        correct_explanation=request.correct_explanation,
+        wrong_explanation=request.wrong_explanation,
+        question_image_url=request.question_image_url,
+        question_name=request.question_name,
+        usage_type=request.usage_type,
+        status=QuestionStatus.approved  # 수정도 승인 상태로 고정
+    )
+    db.add(new_question)
+    db.flush()  # question_id 확정
+
+    # 새 선택지 삽입
+    for index, opt in enumerate(request.options):
+        new_option = Option(
+            option_id=uuid4(),
+            question_id=str(question_id),
+            option_text=opt.option_text,
+            is_correct=opt.is_correct,
+            option_image_url=opt.option_image_url,
+            option_order=index
+        )
+        db.add(new_option)
+
+    db.commit()
+
+    return QuestionCreateResponse(
+        question_id=question_id,
+        message="Question updated successfully (replaced)."
     )

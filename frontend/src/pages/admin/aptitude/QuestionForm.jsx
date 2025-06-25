@@ -90,8 +90,11 @@ export default function QuestionForm() {
                 correct_explanation: correctExplanation,
                 wrong_explanation: wrongExplanation,
                 question_name: questionName,
-                options,
-                usage_type: "aptitude", // ✅ 적성검사 등록용으로 고정 입력
+                options: options.map((opt, idx) => ({
+                    ...opt,
+                    option_order: idx + 1  // ✅ 보기 순서 추가
+                })),
+                usage_type: "aptitude",
             };
 
             await axios.post("/api/admin/questions", payload, {

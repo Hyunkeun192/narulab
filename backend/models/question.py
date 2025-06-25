@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, Text, Boolean, Enum as PgEnum, ForeignKey, Integer, DateTime
 from sqlalchemy import String
+from sqlalchemy.dialects.mysql import CHAR
 import uuid
 
 from sqlalchemy.orm import relationship
@@ -25,7 +26,7 @@ class UsageType(str, enum.Enum):
 class Question(Base):
     __tablename__ = "questions"
 
-    question_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    question_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     test_id = Column(String(36), ForeignKey("tests.test_id"), nullable=True)
 
     question_type = Column(String(50), nullable=False)  # ✅ 텍스트 / 이미지

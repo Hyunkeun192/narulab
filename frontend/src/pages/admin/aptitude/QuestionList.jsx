@@ -15,6 +15,8 @@ export default function QuestionList() {
     const [examType, setExamType] = useState("all");
     const [search, setSearch] = useState("");
     const [message, setMessage] = useState("");
+    const [editMode, setEditMode] = useState(false);
+
 
     // ✅ 문항 목록 로드 (최초 실행 시)
     const fetchQuestions = async () => {
@@ -148,38 +150,172 @@ export default function QuestionList() {
                 </p>
             )}
 
-            {/* ✅ 상세 보기 모달 */}
             {selectedQuestion && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold mb-4">문항 상세 보기</h2>
-                        <p className="mb-1 text-sm text-gray-500">
-                            검사유형: {selectedQuestion.usage_type}
-                        </p>
-                        <p className="mb-1 text-sm text-gray-500">
-                            문항유형: {selectedQuestion.question_type}
-                        </p>
-                        <p className="font-semibold">{selectedQuestion.question_name}</p>
-                        <p className="whitespace-pre-line mb-2">{selectedQuestion.instruction}</p>
-                        <p className="whitespace-pre-line mb-4">{selectedQuestion.question_text}</p>
-                        <ul className="list-disc list-inside mb-4">
+                        <h2 className="text-xl font-bold mb-4">
+                            문항 {editMode ? "수정" : "상세 보기"}
+                        </h2>
+
+                        {/* 문항 제목/본문 */}
+                        {editMode ? (
+                            <>
+                                <input
+                                    className="border p-2 mb-2 w-full"
+                                    value={selectedQuestion.question_name}
+                                    onChange={(e) =>
+                                        setSelectedQuestion({ ...selectedQuestion, question_name: e.target.value })
+                                    }
+                                    placeholder="문항명"
+                                />
+                                <textarea
+                                    className="border p-2 mb-2 w-full"
+                                    value={selectedQuestion.instruction}
+                                    onChange={(e) =>
+                                        setSelectedQuestion({ ...selectedQuestion, instruction: e.target.value })
+                                    }
+                                    placeholder="지시문"
+                                />
+                                <textarea
+                                    className="border p-2 mb-4 w-full"
+                                    value={selectedQuestion.question_text}
+                                    onChange={(e) =>
+                                        setSelectedQuestion({ ...selectedQuestion, question_text: e.target.value })
+                                    }
+                                    placeholder="문항 텍스트"
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <p className="mb-1 text-sm text-gray-500">검사유형: {selectedQuestion.usage_type}</p>
+                                <p className="mb-1 text-sm text-gray-500">문항유형: {selectedQuestion.question_type}</p>
+                                <p className="font-semibold">{selectedQuestion.question_name}</p>
+                                <p className="whitespace-pre-line mb-2">{selectedQuestion.instruction}</p>
+                                <p className="whitespace-pre-line mb-4">{selectedQuestion.question_text}</p>
+                            </>
+                        )}
+
+                        {/* 선택지 */}
+                        <ul className="mb-4">
                             {selectedQuestion.options.map((opt, i) => (
-                                <li key={i} className={opt.is_correct ? "text-green-600" : ""}>
-                                    {opt.option_text}
-                                    {opt.is_correct && " (정답)"}
+                                <li key={i} className="flex items-center gap-2 mb-2">
+                                    {editMode ? (
+                                        <>
+                                            <input
+                                                className="border p-1 flex-1"
+                                                value={opt.option_text}
+                                                onChange={(e) => {
+                                                    const updated = [...selectedQuestion.options];
+                                                    updated[i].option_text = e.target.value;
+                                                    setSelectedQuestion({ ...selectedQuestion, options: updated });
+                                                }}
+                                            />
+                                            <label className="text-sm flex items-center gap-1">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={opt.is_correct}
+                                                    onChange={() => {
+                                                        const updated = [...selectedQuestion.options];
+                                                        updated[i].is_correct = !opt.is_correct;
+                                                        setSelectedQuestion({ ...selectedQuestion, options: updated });
+                                                    }}
+                                                />
+                                                정답
+                                            </label>
+                                        </>
+                                    ) : (
+                                        <span className={opt.is_correct ? "text-green-600" : ""}>
+                                            {opt.option_text}
+                                            {opt.is_correct && " (정답)"}
+                                        </span>
+                                    )}
                                 </li>
                             ))}
                         </ul>
+
+                        {/* 해설 */}
                         <p className="text-xs text-gray-500">
                             정답 해설: {selectedQuestion.correct_explanation || "없음"}
                         </p>
                         <p className="text-xs text-gray-500 mb-4">
                             오답 해설: {selectedQuestion.wrong_explanation || "없음"}
                         </p>
+
+                        {/* 버튼 영역 */}
                         <div className="text-right flex gap-2 justify-end">
-                            {/* ✅ 수정 기능은 추후 연결 가능 */}
+                            {editMode ? (
+                                <>
+                                    <button
+                                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                        
+                                        onClick={async () => {
+                                            try {
+                                                const payload = {
+                                                    test_id: selectedQuestion.test_id || null,
+                                                    question_name: selectedQuestion.question_name,
+                                                    question_text: selectedQuestion.question_text,
+                                                    question_type: selectedQuestion.question_type,
+                                                    usage_type: selectedQuestion.usage_type || "aptitude", // ✅ 요 줄 추가!
+                                                    is_multiple_choice: selectedQuestion.is_multiple_choice,
+                                                    instruction: selectedQuestion.instruction,
+                                                    correct_explanation: selectedQuestion.correct_explanation,
+                                                    wrong_explanation: selectedQuestion.wrong_explanation,
+                                                    question_image_url: selectedQuestion.question_image_url || null,
+
+                                                    // ✅ 선택지 구조 정합성 보장
+                                                    options: [...selectedQuestion.options] // 원본 훼손 방지
+                                                        .sort((a, b) => a.option_order - b.option_order) // ✅ 순서 보장
+                                                        .map((opt, index) => ({
+                                                            option_text: opt.option_text,
+                                                            is_correct: opt.is_correct,
+                                                            option_order: index, // index를 기준으로 재지정
+                                                            option_image_url: opt.option_image_url || null,
+                                                        })),                                                    
+                                                };
+
+                                                await axios.put(
+                                                    `/api/admin/questions/${selectedQuestion.question_id}`,
+                                                    payload,
+                                                    {
+                                                        headers: {
+                                                            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                                                        },
+                                                    }
+                                                );
+
+                                                setMessage("문항이 수정되었습니다.");
+                                                setEditMode(false);
+                                                setSelectedQuestion(null);
+                                                fetchQuestions(); // 리스트 갱신
+                                            } catch {
+                                                setMessage("수정 중 오류가 발생했습니다.");
+                                            }
+                                        }}
+                                          
+                                        
+                                    >
+                                        ✅ 저장하기
+                                    </button>
+                                    <button
+                                        className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+                                        onClick={() => setEditMode(false)}
+                                    >
+                                        취소
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    className="bg-yellow-400 px-4 py-2 rounded hover:bg-yellow-500"
+                                    onClick={() => setEditMode(true)}
+                                >
+                                    ✏️ 수정하기
+                                </button>
+                            )}
                             <button
-                                onClick={() => setSelectedQuestion(null)}
+                                onClick={() => {
+                                    setEditMode(false);
+                                    setSelectedQuestion(null);
+                                }}
                                 className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
                             >
                                 닫기

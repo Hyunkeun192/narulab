@@ -6,6 +6,7 @@ from backend.models.question import QuestionStatus
 
 # 🔸 옵션 스키마
 class OptionItem(BaseModel):
+    option_order: int  # ✅ 추가
     option_text: str
     is_correct: bool
 

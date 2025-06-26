@@ -11,6 +11,7 @@ export default function TestManage() {
     const [showModal, setShowModal] = useState(false); // ✅ 모달 열림 여부
     const [selectedTestId, setSelectedTestId] = useState(null); // ✅ 선택된 test_id
 
+    // ✅ 전체 검사 목록 불러오기
     const fetchTests = async () => {
         try {
             const res = await axios.get("/api/tests", {
@@ -28,6 +29,7 @@ export default function TestManage() {
         fetchTests();
     }, []);
 
+    // ✅ 검사 등록
     const handleCreate = async () => {
         if (!testName || !testType) {
             setMessage("검사명과 유형을 입력해주세요.");
@@ -55,6 +57,7 @@ export default function TestManage() {
         }
     };
 
+    // ✅ 검사 삭제
     const handleDelete = async (testId) => {
         const confirm = window.confirm("정말 삭제하시겠습니까?");
         if (!confirm) return;
@@ -72,12 +75,17 @@ export default function TestManage() {
         }
     };
 
+    // ✅ 모달 열기
     const handleOpenModal = (testId) => {
         setSelectedTestId(testId);
         setShowModal(true);
     };
 
+    // ✅ 선택된 문항 검사에 연결 API 호출
     const handleLinkQuestions = async (questionIds) => {
+        console.log("🧪 연결 요청 test_id:", selectedTestId); // 🔍 디버깅용 로그
+        console.log("🧪 연결할 문항 목록:", questionIds); // 🔍 디버깅용 로그
+
         try {
             await axios.post(
                 `/api/admin/tests/${selectedTestId}/questions`,
@@ -88,7 +96,8 @@ export default function TestManage() {
                     },
                 }
             );
-            alert("문항이 검사에 등록되었습니다.");
+            alert("✅ 문항이 검사에 등록되었습니다.");
+            setMessage("문항이 연결되었습니다.");
         } catch (error) {
             console.error("문항 등록 오류:", error);
             alert("문항 등록 중 오류가 발생했습니다.");

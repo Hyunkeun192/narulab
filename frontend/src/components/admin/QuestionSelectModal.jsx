@@ -7,6 +7,20 @@ const QuestionSelectModal = ({ isOpen, onClose, onConfirm }) => {
     const [search, setSearch] = useState("");
     const [previewQuestion, setPreviewQuestion] = useState(null); // ✅ 문항 미리보기용 상태
 
+    // ✅ "보기" 버튼 클릭 시 questionId로 상세 fetch
+    const handlePreview = async (questionId) => {
+        try {
+            const res = await axios.get(`/api/admin/questions/detail/${questionId}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                },
+            });
+            setPreviewQuestion(res.data); // ✅ options 포함된 상세 데이터 설정
+        } catch (err) {
+            console.error("미리보기 문항 불러오기 실패", err);
+        }
+    };
+
     useEffect(() => {
         if (isOpen) {
             axios
@@ -83,13 +97,13 @@ const QuestionSelectModal = ({ isOpen, onClose, onConfirm }) => {
                                             <div className="space-x-2">
                                                 <button
                                                     className="text-xs text-gray-700 hover:underline"
-                                                    onClick={() => setPreviewQuestion(q)} // ✅ 이제 정상 작동
+                                                    onClick={() => handlePreview(q.question_id)} // ✅ 수정된 부분
                                                 >
                                                     보기
                                                 </button>
                                                 <button
                                                     className="text-xs text-blue-600 hover:underline"
-                                                    onClick={() => handleAdd(q)} // ✅ 추가 버튼
+                                                    onClick={() => handleAdd(q)}
                                                 >
                                                     추가
                                                 </button>
@@ -148,38 +162,46 @@ const QuestionSelectModal = ({ isOpen, onClose, onConfirm }) => {
 
             {/* ✅ 보기 모달 (previewQuestion 존재할 때) */}
             {previewQuestion && (
-                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-60">
-                    <div className="bg-white w-[600px] max-h-[80vh] overflow-y-auto rounded-lg shadow p-6">
-                        <h3 className="text-lg font-semibold mb-2">문항 보기</h3>
-                        <p className="text-sm text-gray-600 mb-1">
-                            <strong>문항명:</strong> {previewQuestion.question_name}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-1 whitespace-pre-wrap">
-                            <strong>지시문:</strong> {previewQuestion.instruction || "-"}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-2 whitespace-pre-wrap">
-                            <strong>본문:</strong> {previewQuestion.question_text}
-                        </p>
-                        <p className="text-sm text-gray-600 mb-2">
-                            <strong>선택지:</strong>
-                        </p>
-                        <ul className="list-disc list-inside text-sm pl-4 space-y-1">
-                            {previewQuestion.options?.map((opt, idx) => (
-                                <li key={idx}>
-                                    {opt.option_order + 1}. {opt.option_text}
-                                </li>
-                            ))}
-                        </ul>
-                        <div className="text-right mt-4">
-                            <button
-                                onClick={() => setPreviewQuestion(null)}
-                                className="px-3 py-1 text-sm bg-gray-300 rounded hover:bg-gray-400"
-                            >
-                                닫기
-                            </button>
+                <>
+                    {console.log("🧪 미리보기 대상:", previewQuestion)}
+
+                    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-[999]">
+                        <div className="bg-white w-[600px] max-h-[80vh] overflow-y-auto rounded-2xl shadow-xl p-6 
+                      transition-transform duration-200 scale-100 opacity-100 animate-fadeIn">
+                            <h3 className="text-lg font-semibold mb-2">문항 보기</h3>
+
+                            <p className="text-sm text-gray-600 mb-1">
+                                <strong>문항명:</strong> {previewQuestion.question_name}
+                            </p>
+                            <p className="text-sm text-gray-600 mb-1 whitespace-pre-wrap">
+                                <strong>지시문:</strong> {previewQuestion.instruction || "-"}
+                            </p>
+                            <p className="text-sm text-gray-600 mb-2 whitespace-pre-wrap">
+                                <strong>본문:</strong> {previewQuestion.question_text}
+                            </p>
+
+                            <p className="text-sm text-gray-600 mb-2">
+                                <strong>선택지:</strong>
+                            </p>
+                            <ul className="list-decimal list-inside text-sm pl-4 space-y-1">
+                                {previewQuestion.options?.map((opt, idx) => (
+                                    <li key={idx}>
+                                        {(typeof opt.option_order === "number" ? opt.option_order + 1 : idx + 1)}. {opt.option_text}
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <div className="text-right mt-4">
+                                <button
+                                    onClick={() => setPreviewQuestion(null)}
+                                    className="px-4 py-1 text-sm bg-gray-300 rounded hover:bg-gray-400 transition"
+                                >
+                                    닫기
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </>
             )}
         </>
     );

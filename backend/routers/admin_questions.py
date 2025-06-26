@@ -7,7 +7,7 @@ from backend.database.database import get_db
 from backend.models.question import Question, QuestionStatus
 from backend.models.option import Option
 from backend.schemas.question_review import QuestionReviewRequest, QuestionReviewResponse
-from backend.schemas.question_list import QuestionListItem
+from backend.schemas.question_list import QuestionListItem, OptionItem
 from backend.schemas.question_create import QuestionCreateRequest, QuestionCreateResponse
 
 # ✅ 관리자 인증 의존성
@@ -18,6 +18,45 @@ router = APIRouter(
     tags=["Admin - Questions"],
     dependencies=[Depends(get_content_or_super_admin_user)]
 )
+
+# ✅ 문항 상세 조회 (미리보기용) → 반드시 제일 위에 위치해야 FastAPI 라우팅 오류 방지
+# ✅ 문항 상세 조회 (미리보기용) → 반드시 제일 위에 위치해야 FastAPI 라우팅 오류 방지
+@router.get("/detail/{question_id}")
+def get_question_by_id(
+    question_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """
+    ✅ 미리보기 기능용 단일 문항 조회 API
+    - options 포함
+    - MySQL에서는 UUID vs VARCHAR 비교 문제로 str 변환 필요
+    """
+    # 🔧 UUID → 문자열로 변환하여 비교해야 MySQL에서 매칭됨
+    question = db.query(Question).filter(Question.question_id == str(question_id)).first()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    options = (
+        db.query(Option)
+        .filter(Option.question_id == str(question_id))
+        .order_by(Option.option_order.asc())
+        .all()
+    )
+
+    return {
+        "question_id": question.question_id,
+        "question_name": question.question_name,
+        "instruction": question.instruction,
+        "question_text": question.question_text,
+        "options": [
+            {
+                "option_id": o.option_id,
+                "option_text": o.option_text,
+                "option_order": o.option_order
+            }
+            for o in options
+        ]
+    }
 
 # 🔍 문항 승인/반려
 @router.post("/{question_id}/review", response_model=QuestionReviewResponse)
@@ -48,10 +87,40 @@ def get_questions(
     status: Optional[QuestionStatus] = Query(None),
     db: Session = Depends(get_db)
 ):
+    """
+    ✅ 문항 목록을 조회하고, 선택지에 option_order 포함되도록 명시적 직렬화 처리
+    ✅ 프론트엔드 '문항 보기' 기능에서 option_order 기반 정렬을 위해 필요
+    """
     query = db.query(Question).options(joinedload(Question.options))
     if status:
         query = query.filter(Question.status == status)
-    return query.order_by(Question.created_at.desc()).all()
+
+    questions = query.order_by(Question.created_at.desc()).all()
+
+    result = []
+    for q in questions:
+        result.append(QuestionListItem(
+            question_id=q.question_id,
+            test_id=q.test_id,
+            question_text=q.question_text,
+            question_type=q.question_type,
+            is_multiple_choice=q.is_multiple_choice,
+            status=q.status,
+            created_at=q.created_at,
+            question_name=q.question_name,
+            instruction=q.instruction,
+            correct_explanation=q.correct_explanation,
+            wrong_explanation=q.wrong_explanation,
+            usage_type=q.usage_type,
+            options=[
+                OptionItem(
+                    option_text=o.option_text,
+                    is_correct=o.is_correct,
+                    option_order=o.option_order
+                ) for o in sorted(q.options, key=lambda x: x.option_order or 0)
+            ]
+        ))
+    return result
 
 # ✅ 문항 등록
 @router.post("", response_model=QuestionCreateResponse)
@@ -107,11 +176,9 @@ def update_question(
 ):
     print(f"🚨 update_question 호출됨: question_id = {question_id} ({type(question_id)})")
 
-    # 기존 문항 및 연결된 선택지 제거
     db.query(Option).filter(Option.question_id == str(question_id)).delete()
     db.query(Question).filter(Question.question_id == str(question_id)).delete()
 
-    # 새 문항 객체 생성 및 삽입
     new_question = Question(
         question_id=str(question_id),
         test_id=request.test_id,
@@ -124,12 +191,11 @@ def update_question(
         question_image_url=request.question_image_url,
         question_name=request.question_name,
         usage_type=request.usage_type,
-        status=QuestionStatus.approved  # 수정도 승인 상태로 고정
+        status=QuestionStatus.approved
     )
     db.add(new_question)
-    db.flush()  # question_id 확정
+    db.flush()
 
-    # 새 선택지 삽입
     for index, opt in enumerate(request.options):
         new_option = Option(
             option_id=uuid4(),

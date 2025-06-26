@@ -13,6 +13,8 @@ from backend.schemas.test_create import TestCreateRequest, TestCreateResponse
 from backend.schemas.test_add_question import AddQuestionRequest, AddQuestionResponse
 from backend.schemas.test_remove_question import RemoveQuestionRequest, RemoveQuestionResponse
 from backend.schemas.test_update import TestUpdateRequest, TestUpdateResponse
+from backend.schemas.test_question_bulk_link import TestQuestionBulkLinkRequest  # ✅ 이 줄 추가
+
 
 # ✅ 관리자 인증 의존성 import
 from backend.dependencies.admin_auth import get_current_admin_user
@@ -220,37 +222,32 @@ def update_test(
     )
 
 # ✅ 신규 추가: test_question_links 테이블 기반 문항 연결용 API
-@router.post("/{test_id}/link-questions", response_model=List[TestQuestionLinkOut])
-def link_questions_to_test(
+@router.post("/{test_id}/questions", response_model=List[TestQuestionLinkOut])
+def bulk_link_questions_to_test(
     test_id: UUID,
-    links: List[TestQuestionLinkCreate],
+    request: TestQuestionBulkLinkRequest = Body(...),
     db: Session = Depends(get_db)
 ):
     """
-    ✅ 검사에 문항들을 연결하는 API
-    - 중복 등록 방지
-    - order_index는 선택적으로 사용
+    ✅ 기존 문항 삭제 후 새로운 문항들을 순서대로 검사에 연결
     """
     test = db.query(Test).filter(Test.test_id == str(test_id)).first()
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
-    created_links = []
-    for link in links:
-        existing = db.query(TestQuestionLink).filter(
-            TestQuestionLink.test_id == str(test_id),
-            TestQuestionLink.question_id == link.question_id
-        ).first()
-        if existing:
-            continue
+    # 기존 연결 모두 삭제
+    db.query(TestQuestionLink).filter(TestQuestionLink.test_id == str(test_id)).delete()
 
-        new_link = TestQuestionLink(
+    # 새 연결 추가
+    new_links = []
+    for index, question_id in enumerate(request.question_ids):
+        link = TestQuestionLink(
             test_id=str(test_id),
-            question_id=link.question_id,
-            order_index=link.order_index
+            question_id=question_id,
+            order_index=index
         )
-        db.add(new_link)
-        created_links.append(new_link)
+        db.add(link)
+        new_links.append(link)
 
     db.commit()
-    return created_links
+    return new_links

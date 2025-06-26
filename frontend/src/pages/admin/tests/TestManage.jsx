@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ 페이지 이동용 훅 추가
 import axios from "axios";
+import QuestionSelectModal from "../../../components/admin/QuestionSelectModal"; // ✅ 모달 import
 
-// ✅ 관리자 전용 검사 목록/등록 페이지
 export default function TestManage() {
-    const [tests, setTests] = useState([]); // ✅ 전체 검사 리스트
-    const [testName, setTestName] = useState(""); // ✅ 새 검사 이름
-    const [testType, setTestType] = useState("aptitude"); // ✅ 검사 유형 선택
+    const [tests, setTests] = useState([]);
+    const [testName, setTestName] = useState("");
+    const [testType, setTestType] = useState("aptitude");
     const [message, setMessage] = useState("");
-    const navigate = useNavigate(); // ✅ 라우팅을 위한 navigate 훅
 
-    // ✅ 검사 목록 불러오기
+    const [showModal, setShowModal] = useState(false); // ✅ 모달 열림 여부
+    const [selectedTestId, setSelectedTestId] = useState(null); // ✅ 선택된 test_id
+
     const fetchTests = async () => {
         try {
             const res = await axios.get("/api/tests", {
@@ -28,7 +28,6 @@ export default function TestManage() {
         fetchTests();
     }, []);
 
-    // ✅ 새 검사 등록 요청
     const handleCreate = async () => {
         if (!testName || !testType) {
             setMessage("검사명과 유형을 입력해주세요.");
@@ -50,13 +49,12 @@ export default function TestManage() {
             );
             setMessage("검사가 등록되었습니다.");
             setTestName("");
-            fetchTests(); // 등록 후 리스트 갱신
+            fetchTests();
         } catch {
             setMessage("검사 등록 중 오류가 발생했습니다.");
         }
     };
 
-    // ✅ 검사 삭제 요청
     const handleDelete = async (testId) => {
         const confirm = window.confirm("정말 삭제하시겠습니까?");
         if (!confirm) return;
@@ -74,17 +72,35 @@ export default function TestManage() {
         }
     };
 
-    // ✅ 검사에 문항 등록하러 이동
-    const handleAssign = (testId) => {
-        // 문항 연결 페이지로 이동 (test_id를 쿼리로 전달)
-        navigate(`/admin/tests/assign/${testId}`);
+    const handleOpenModal = (testId) => {
+        setSelectedTestId(testId);
+        setShowModal(true);
+    };
+
+    const handleLinkQuestions = async (questionIds) => {
+        try {
+            await axios.post(
+                `/api/admin/tests/${selectedTestId}/questions`,
+                { question_ids: questionIds },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+                    },
+                }
+            );
+            alert("문항이 검사에 등록되었습니다.");
+        } catch (error) {
+            console.error("문항 등록 오류:", error);
+            alert("문항 등록 중 오류가 발생했습니다.");
+        } finally {
+            setShowModal(false);
+        }
     };
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-10">
             <h1 className="text-2xl font-bold mb-6">검사 목록 관리</h1>
 
-            {/* ✅ 새 검사 등록 섹션 */}
             <div className="mb-10">
                 <h2 className="text-lg font-semibold mb-2">검사 등록</h2>
                 <input
@@ -110,10 +126,8 @@ export default function TestManage() {
                 </button>
             </div>
 
-            {/* ✅ 메시지 출력 */}
             {message && <p className="text-sm text-blue-600 mb-4">{message}</p>}
 
-            {/* ✅ 검사 리스트 테이블 */}
             <div>
                 <h2 className="text-lg font-semibold mb-3">등록된 검사</h2>
                 <table className="w-full table-auto border-collapse border">
@@ -123,7 +137,7 @@ export default function TestManage() {
                             <th className="border px-4 py-2">유형</th>
                             <th className="border px-4 py-2">ID</th>
                             <th className="border px-4 py-2">삭제</th>
-                            <th className="border px-4 py-2">문항 등록</th> {/* ✅ 새 열 추가 */}
+                            <th className="border px-4 py-2">문항 등록</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,7 +156,7 @@ export default function TestManage() {
                                 </td>
                                 <td className="border px-4 py-2 text-center">
                                     <button
-                                        onClick={() => handleAssign(test.test_id)}
+                                        onClick={() => handleOpenModal(test.test_id)}
                                         className="text-blue-500 hover:underline text-sm"
                                     >
                                         문항 등록하기
@@ -160,6 +174,13 @@ export default function TestManage() {
                     </tbody>
                 </table>
             </div>
+
+            {/* ✅ 문항 선택 모달 */}
+            <QuestionSelectModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onConfirm={handleLinkQuestions}
+            />
         </div>
     );
 }

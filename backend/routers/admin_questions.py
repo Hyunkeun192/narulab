@@ -9,6 +9,7 @@ from backend.models.option import Option
 from backend.schemas.question_review import QuestionReviewRequest, QuestionReviewResponse
 from backend.schemas.question_list import QuestionListItem, OptionItem
 from backend.schemas.question_create import QuestionCreateRequest, QuestionCreateResponse
+from backend.dependencies.admin_auth import get_current_admin_user
 
 # ✅ 관리자 인증 의존성
 from backend.dependencies.admin_auth import get_content_or_super_admin_user
@@ -213,3 +214,23 @@ def update_question(
         question_id=question_id,
         message="Question updated successfully (replaced)."
     )
+
+@router.get("/{question_id}/used-in-tests", response_model=list[str])
+def get_tests_using_question(
+    question_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_admin_user)
+):
+    """
+    해당 문항이 어떤 검사(test)에 연결되어 있는지 검사명 목록을 반환합니다.
+    """
+    from models.test_question_links import TestQuestionLink
+    from models.test import Test
+
+    # 연결된 검사 ID 가져오기
+    links = db.query(TestQuestionLink).filter(TestQuestionLink.question_id == question_id).all()
+    test_ids = [link.test_id for link in links]
+
+    # 검사명 조회
+    tests = db.query(Test).filter(Test.test_id.in_(test_ids)).all()
+    return [t.test_name for t in tests]

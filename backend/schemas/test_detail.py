@@ -43,3 +43,40 @@ class TestDetailResponse(BaseModel):
         model_config = {
         "from_attributes": True
     }
+
+# 🔹 보기 모델 (옵션)
+class OptionOut(BaseModel):
+    option_id: str
+    option_text: str
+    is_correct: Optional[bool] = False
+
+    class Config:
+        orm_mode = True
+
+# 🔹 문항 + 보기 포함 모델
+class QuestionWithOptionsOut(BaseModel):
+    question_id: str
+    question_name: Optional[str]
+    instruction: Optional[str]
+    question_text: Optional[str]
+    options: List[OptionOut] = []
+
+    class Config:
+        orm_mode = True
+
+class QuestionIdList(BaseModel):
+    question_ids: List[str]
+
+class TestSummary(BaseModel):
+    test_id: str
+    test_name: str
+    test_type: str
+    is_published: bool
+    question_count: Optional[int]  # ✅ 이 필드가 핵심!
+
+# ✅ 검사 생성 요청 모델 정의
+class TestCreateRequest(BaseModel):
+    test_name: str                     # 검사명
+    test_type: str                     # 검사 유형 (예: aptitude, personality)
+    version: str                       # 버전명 (예: v1.0)
+    duration_minutes: int             # ✅ 소요 시간(분) — 프론트에서 입력받은 값

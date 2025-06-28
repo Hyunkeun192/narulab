@@ -14,8 +14,8 @@ export default function AdminHome() {
                     <Link to="/admin/tests/manage" className="hover:text-blue-500">검사 구성 관리</Link>
                     <Link to="/admin/aptitude/questions" className="hover:text-blue-500">적성검사 문항 등록</Link>
                     <Link to="/admin/personality/questions" className="hover:text-blue-500">인성검사 문항 등록</Link>
-                    <Link to="/admin/norms" className="hover:text-blue-500">규준(Norm) 등록</Link>
-                    <Link to="/admin/aptitude/questions/list" className="hover:text-blue-500">문항 리스트 / 수정</Link>
+                    <Link to="/admin/norms" className="hover:text-blue-500">규준 등록</Link>
+                    <Link to="/admin/aptitude/questions/list" className="hover:text-blue-500">문항 리스트</Link>
                     <Link to="/admin/norms" className="hover:text-blue-500">STEN 설정</Link>
                     <Link to="/admin/statistics/sten" className="hover:text-blue-500">STEN 통계</Link>
                     <Link to="/admin/reports/manage" className="hover:text-blue-500">리포트 기준 설정</Link>

@@ -73,10 +73,21 @@ class TestDetail(BaseModel):
     }
 
 # ✅ 전체 검사 목록 조회
-@router.get("/api/tests", response_model=List[TestSummary])
+@router.get("/api/tests")
 def get_tests(db: Session = Depends(get_db)):
     tests = db.query(Test).order_by(Test.created_at.desc()).all()
-    return tests
+    return [
+        {
+            "test_id": t.test_id,
+            "test_name": t.test_name,
+            "test_type": t.test_type,
+            "is_published": t.is_published,
+            "question_count": t.question_count,  # ✅ 핵심 필드
+            "duration_minutes": t.duration_minutes,
+            "version": t.version
+        }
+        for t in tests
+    ]
 
 # ✅ 단일 검사 상세 조회
 @router.get("/api/tests/{test_id}", response_model=TestDetail)

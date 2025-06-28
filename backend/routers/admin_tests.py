@@ -8,7 +8,7 @@ from backend.models.test import Test
 from backend.models.question import Question
 from backend.models.option import Option
 from backend.schemas.question_create import OptionItem
-from backend.schemas.test_detail import TestDetailResponse, QuestionWithOptions
+from backend.schemas.test_detail import TestDetailResponse, QuestionWithOptionsOut, QuestionIdList, TestCreateRequest
 from backend.schemas.test_create import TestCreateRequest, TestCreateResponse
 from backend.schemas.test_add_question import AddQuestionRequest, AddQuestionResponse
 from backend.schemas.test_remove_question import RemoveQuestionRequest, RemoveQuestionResponse
@@ -19,6 +19,7 @@ from backend.dependencies.admin_auth import get_current_admin_user
 
 from backend.models.test_question_links import TestQuestionLink
 from backend.schemas.test_question_links import TestQuestionLinkCreate, TestQuestionLinkOut
+
 
 
 router = APIRouter(
@@ -212,32 +213,92 @@ def update_test(
 
 
 # ✅ 문항 일괄 연결 API (test_question_links 사용)
-@router.post("/{test_id}/questions", response_model=List[TestQuestionLinkOut])
+@router.post("/{test_id}/questions")
 def bulk_link_questions_to_test(
-    test_id: UUID,
-    request: TestQuestionBulkLinkRequest = Body(...),
-    db: Session = Depends(get_db)
+    test_id: str,
+    question_data: QuestionIdList,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_admin_user),
 ):
     """
-    ✅ 기존 문항 연결 삭제 후 새로 연결 (순서 유지)
+    테스트에 문항 일괄 연결
+    기존 연결 삭제 후 새로 저장
     """
-    test = db.query(Test).filter(Test.test_id == str(test_id)).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
+    # 기존 연결 삭제
+    db.query(TestQuestionLink).filter(TestQuestionLink.test_id == test_id).delete()
+    db.commit()
 
-    # 기존 연결 모두 제거
-    db.query(TestQuestionLink).filter(TestQuestionLink.test_id == str(test_id)).delete()
-
-    # 새 연결 추가
+    question_ids = question_data.question_ids
     new_links = []
-    for index, question_id in enumerate(request.question_ids):
+
+    for idx, q_id in enumerate(question_ids):
         link = TestQuestionLink(
-            test_id=str(test_id),
-            question_id=str(question_id),  # ✅ 문자열 변환 필요!
-            order_index=index
+            test_id=test_id,
+            question_id=q_id,
+            order_index=idx,
         )
         db.add(link)
         new_links.append(link)
 
     db.commit()
-    return new_links
+
+    # ✅ 등록된 문항 수 업데이트
+    test = db.query(Test).filter(Test.test_id == test_id).first()
+    if test:
+        test.question_count = (
+            db.query(TestQuestionLink)
+            .filter(TestQuestionLink.test_id == test_id)
+            .count()
+        )
+        db.commit()
+
+    # ✅ 응답 형식도 변경
+    return {"message": "문항이 성공적으로 연결되었습니다."}
+
+
+
+# ✅ 문항 리스트 조회 라우터 - 등록된 문항 확인/수정용
+@router.get("/{test_id}/questions", response_model=list[QuestionWithOptionsOut])
+def get_test_questions(test_id: str, db: Session = Depends(get_db), user=Depends(get_current_admin_user)):
+    """
+    특정 검사에 연결된 문항과 보기(option)를 순서대로 반환합니다.
+    """
+    links = (
+        db.query(TestQuestionLink)
+        .filter(TestQuestionLink.test_id == test_id)
+        .order_by(TestQuestionLink.order_index)
+        .all()
+    )
+
+    questions = []
+    for link in links:
+        question = db.query(Question).filter(Question.question_id == link.question_id).first()
+        if question:
+            options = db.query(Option).filter(Option.question_id == question.question_id).all()
+            question.options = options
+            questions.append(question)
+
+    return questions
+
+@router.put("/{test_id}/publish")
+def toggle_publish_test(
+    test_id: str,
+    publish: bool = Query(...),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_admin_user)
+):
+    """
+    검사 활성화 여부 변경 (활성화: True, 비활성화: False)
+    """
+    test = db.query(Test).filter(Test.test_id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="검사를 찾을 수 없습니다.")
+
+    test.is_published = 1 if publish else 0
+    db.commit()
+
+    return {
+        "success": True,
+        "test_id": test_id,
+        "is_published": test.is_published
+    }

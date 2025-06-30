@@ -27,6 +27,9 @@ import ReportHistory from "./pages/user/ReportHistory";
 import StenChart from "./pages/admin/statistics/StenChart";
 import ReportListSchool from "./pages/school/reports/ReportList";
 import ReportListCompany from "./pages/company/reports/ReportList";
+import ProductStart from "./pages/product/ProductStart";
+import ProductExample from "./pages/product/ProductExample";
+import ProductExam from "./pages/product/ProductExam";
 
 // ✅ 공통 레이아웃 import
 import MainLayout from "./layouts/MainLayout";
@@ -73,6 +76,9 @@ const AppRoutes = () => (
     <Route path="/login" element={<LoginPage />} />
     <Route path="/signup" element={<SignupPage />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/product/:test_id/start" element={<ProductStart />} />
+    <Route path="/product/:test_id/example" element={<ProductExample />} />
+    <Route path="/product/:test_id/exam" element={<ProductExam />} />
 
     {/* ✅ MainLayout 적용되는 나머지 경로들 */}
     <Route
@@ -110,3 +116,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </BrowserRouter>
   </React.StrictMode>
 );
+

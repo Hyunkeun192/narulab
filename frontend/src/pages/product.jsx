@@ -1,20 +1,21 @@
 // src/pages/product.jsx
 
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useUser } from "../hooks/useUser"; // ✅ 사용자 상태 가져오기
+import { useUser } from "../hooks/useUser";
 import { motion } from "framer-motion";
 import axios from "axios";
+import ExamStartModal from "../components/ExamStartModal"; // ✅ 모달 컴포넌트 import
 
 export default function Product() {
     const user = useUser();
     const [tests, setTests] = useState([]);
+    const [selectedTestId, setSelectedTestId] = useState(null); // ✅ 선택된 검사 ID
+    const [isModalOpen, setIsModalOpen] = useState(false); // ✅ 모달 상태
 
-    // ✅ 활성화된 검사만 필터링
     useEffect(() => {
         const fetchTests = async () => {
             try {
-                const response = await axios.get("/api/tests"); // ✅ 수정
+                const response = await axios.get("/api/tests");
                 const publishedTests = response.data.filter((test) => test.is_published);
                 setTests(publishedTests);
             } catch (error) {
@@ -23,6 +24,16 @@ export default function Product() {
         };
         fetchTests();
     }, []);
+
+    const handleOpenModal = (testId) => {
+        setSelectedTestId(testId);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setSelectedTestId(null);
+        setIsModalOpen(false);
+    };
 
     return (
         <motion.div
@@ -40,17 +51,28 @@ export default function Product() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                         {tests.map((test) => (
-                            <Link
+                            <div
                                 key={test.test_id}
-                                to={`/tests/${test.test_id}`}
-                                className="block border rounded-lg p-4 shadow hover:shadow-md transition bg-gray-50 hover:bg-white"
+                                className="border rounded-lg p-4 shadow hover:shadow-md transition bg-gray-50 hover:bg-white flex flex-col justify-between"
                             >
-                                <h3 className="text-lg font-semibold mb-1">{test.test_name}</h3>
-                                <p className="text-sm text-gray-600">문항 수: 약 {test.question_count ?? "?"}문항</p>
-                                <p className="text-sm text-gray-600">소요 시간: 약 {test.duration_minutes ?? "?"}분</p>
-                            </Link>
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-1">{test.test_name}</h3>
+                                    <p className="text-sm text-gray-600">문항 수: 약 {test.question_count ?? "?"}문항</p>
+                                    <p className="text-sm text-gray-600 mb-4">소요 시간: 약 {test.duration_minutes ?? "?"}분</p>
+                                </div>
+                                <button
+                                    onClick={() => handleOpenModal(test.test_id)}
+                                    className="mt-auto bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-2 rounded transition"
+                                >
+                                    시작하기
+                                </button>
+                            </div>
                         ))}
                     </div>
+                )}
+
+                {isModalOpen && (
+                    <ExamStartModal testId={selectedTestId} onClose={handleCloseModal} />
                 )}
             </main>
         </motion.div>

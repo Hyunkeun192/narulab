@@ -306,3 +306,63 @@ def create_test(
         message="검사가 성공적으로 등록되었습니다.",
         test_id=new_test.test_id
     )
+
+# ✅ 사용자 전용 문항 조회 API
+@router.get("/api/tests/{test_id}/questions-public", response_model=TestDetail)
+def get_test_questions_for_user(test_id: str, db: Session = Depends(get_db)):
+    """
+    ✅ 사용자(응시자)용 문항 조회 API
+    - 관리자 인증 없이 누구나 접근 가능
+    - test_question_links 기준으로 순서대로 문항 + 선택지 반환
+    """
+    test = db.query(Test).filter(Test.test_id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    # ✅ 연결된 문항 순서대로 불러오기
+    from backend.models.test_question_links import TestQuestionLink
+    links = (
+        db.query(TestQuestionLink)
+        .filter(TestQuestionLink.test_id == test_id)
+        .order_by(TestQuestionLink.order_index.asc())
+        .all()
+    )
+    question_ids = [link.question_id for link in links]
+
+    questions = (
+        db.query(Question)
+        .filter(Question.question_id.in_(question_ids))
+        .all()
+    )
+
+    question_map = {q.question_id: q for q in questions}
+
+    # ✅ 문항 + 선택지 구성
+    question_data = []
+    for order, qid in enumerate(question_ids):
+        q = question_map[qid]
+        options = db.query(Option).filter(
+            Option.question_id == q.question_id
+        ).order_by(Option.option_order.asc()).all()
+
+        question_data.append(QuestionSchema(
+            question_id=q.question_id,
+            question_text=q.question_text,
+            question_type=q.question_type,
+            is_multiple_choice=q.is_multiple_choice,
+            order_index=order + 1,
+            options=[
+                OptionSchema(
+                    option_id=o.option_id,
+                    option_text=o.option_text,
+                    option_order=o.option_order
+                ) for o in options
+            ]
+        ))
+
+    return TestDetail(
+        test_id=test.test_id,
+        test_name=test.test_name,
+        duration_minutes=test.duration_minutes,
+        questions=question_data
+    )

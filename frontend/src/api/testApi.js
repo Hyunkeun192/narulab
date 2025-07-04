@@ -9,7 +9,7 @@ import axios from "axios";
  */
 export const getTestQuestions = async (testId) => {
     try {
-        const response = await axios.get(`/api/admin/tests/${testId}/questions`);
+        const response = await axios.get(`/api/tests/${testId}/questions-public`);
         return response.data;
     } catch (error) {
         console.error("검사 문항 불러오기 실패:", error);

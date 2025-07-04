@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { getTestQuestions } from "../api/testApi"; // ✅ 실제 문항 불러오는 API
 import { motion } from "framer-motion";
+import ExampleQuestion from "./ExampleQuestion"; // ✅ 예제 문항 컴포넌트 추가
 
-export default function ExamStartModal({ testId, onClose }) {
+export default function ExamStartModal({ testId, testName, onClose }) {
     const [step, setStep] = useState("notice"); // notice → example → exam
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
@@ -23,7 +24,6 @@ export default function ExamStartModal({ testId, onClose }) {
         fetch();
     }, [testId]);
 
-    // ✅ 선택지 선택
     const handleSelect = (questionId, index) => {
         setAnswers((prev) => ({ ...prev, [questionId]: index }));
     };
@@ -52,8 +52,14 @@ export default function ExamStartModal({ testId, onClose }) {
                 exit={{ scale: 0.9, opacity: 0 }}
                 className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 relative max-h-[90vh] overflow-y-auto"
             >
-                <button onClick={onClose} className="absolute top-3 right-4 text-gray-500 hover:text-black text-sm">닫기</button>
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-4 text-gray-500 hover:text-black text-sm"
+                >
+                    닫기
+                </button>
 
+                {/* ✅ 검사 유의사항 */}
                 {step === "notice" && (
                     <div>
                         <h2 className="text-xl font-semibold mb-4">검사 유의사항</h2>
@@ -73,41 +79,18 @@ export default function ExamStartModal({ testId, onClose }) {
                     </div>
                 )}
 
+                {/* ✅ 예제 문항 영역 - 컴포넌트 분리 */}
                 {step === "example" && (
-                    <div>
-                        <h2 className="text-lg font-semibold mb-4">예제 문항</h2>
-                        <p className="mb-3">다음 보기 중 가장 적절한 것을 선택하세요.</p>
-                        <div className="border p-4 rounded bg-gray-50 mb-4">
-                            <p className="font-medium mb-2">나는 계획을 세워 일하는 편이다.</p>
-                            <ul className="space-y-2 text-sm">
-                                {["항상 그렇다", "그렇다", "보통이다", "아니다", "전혀 아니다"].map((opt, idx) => (
-                                    <li
-                                        key={idx}
-                                        className="cursor-pointer p-2 border rounded hover:bg-gray-200"
-                                    >
-                                        {idx + 1}. {opt}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="text-right">
-                            <button
-                                onClick={() => setStep("exam")}
-                                className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
-                            >
-                                본검사 시작
-                            </button>
-                        </div>
-                    </div>
+                    <ExampleQuestion testName={testName} onNext={() => setStep("exam")} />
                 )}
 
+                {/* ✅ 본검사 */}
                 {step === "exam" && questions.length > 0 && current && (
                     <div>
                         <div className="text-sm text-right text-gray-500 mb-2">
                             {currentIndex + 1} / {questions.length} 문항
                         </div>
 
-                        {/* 지시문 */}
                         {current.instruction && (
                             <p className="text-sm text-gray-600 mb-2">{current.instruction}</p>
                         )}
@@ -130,7 +113,6 @@ export default function ExamStartModal({ testId, onClose }) {
                                 ))}
                         </ul>
 
-                        {/* 현황판 */}
                         <div className="flex gap-1 mb-4 flex-wrap">
                             {questions.map((q, idx) => (
                                 <button

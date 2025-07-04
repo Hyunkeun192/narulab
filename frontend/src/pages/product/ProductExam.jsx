@@ -1,8 +1,10 @@
+// src/pages/ProductExam.jsx
+
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 
-// ✅ 타이머 컴포넌트 (상단 고정)
+// ⏱️ 상단 타이머 컴포넌트
 function CountdownTimer({ duration, onTimeOver }) {
     const [timeLeft, setTimeLeft] = useState(duration * 60);
 
@@ -26,7 +28,7 @@ function CountdownTimer({ duration, onTimeOver }) {
     return (
         <div className="text-right text-sm text-gray-700 font-medium mb-4">
             <div className="border rounded px-3 py-1 inline-block">
-                Time Remaining: {minutes}:{seconds.toString().padStart(2, "0")}
+                남은 시간: {minutes}:{seconds.toString().padStart(2, "0")}
             </div>
         </div>
     );
@@ -34,29 +36,27 @@ function CountdownTimer({ duration, onTimeOver }) {
 
 export default function ProductExam() {
     const { test_id } = useParams();
-    const navigate = useNavigate();
-
-    // ✅ 예시 문항 리스트
-    const questions = [
-        {
-            question_id: "q1",
-            instruction: "Read the following question and select the most appropriate option.",
-            question_text: "If a train travels 120 km in 2 hours, what is its average speed?",
-            options: ["50 km/h", "60 km/h", "70 km/h", "80 km/h", "90 km/h"],
-        },
-        {
-            question_id: "q2",
-            instruction: "Solve the following percentage problem.",
-            question_text: "A shirt originally costs $80. After a 25% discount, what is the sale price?",
-            options: ["$55", "$60", "$65", "$70", "$75"],
-        },
-    ];
-
-    const duration_minutes = 25;
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [timeOver, setTimeOver] = useState(false);
+    const duration_minutes = 25;
+
     const current = questions[currentIndex];
+
+    // ✅ API로 문항 불러오기
+    useEffect(() => {
+        const fetchQuestions = async () => {
+            try {
+                const res = await fetch(`/api/tests/${test_id}/questions-public`);
+                const data = await res.json();
+                setQuestions(data.questions || []);
+            } catch (err) {
+                console.error("문항 불러오기 실패:", err);
+            }
+        };
+        fetchQuestions();
+    }, [test_id]);
 
     const handleSelect = (index) => {
         setAnswers((prev) => ({
@@ -78,8 +78,10 @@ export default function ProductExam() {
     };
 
     const handleSubmit = () => {
-        alert("Test Completed!\nYour Score: 0/" + questions.length);
+        alert("검사 완료!\n총 문항 수: " + questions.length);
     };
+
+    if (!current) return <div className="text-center mt-10">문항을 불러오는 중입니다...</div>;
 
     return (
         <motion.div
@@ -87,18 +89,18 @@ export default function ProductExam() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="min-h-screen bg-white text-gray-900 font-sans px-6 py-6"
+            className="fixed inset-0 bg-white z-50 overflow-y-auto px-6 py-6"
         >
-            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-6">
-                {/* ✅ 좌측: 문제 및 선택지 */}
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-6">
+                {/* ✅ 좌측: 문항 영역 */}
                 <div>
                     <CountdownTimer duration={duration_minutes} onTimeOver={() => setTimeOver(true)} />
 
                     <p className="text-lg font-semibold mb-2">
-                        Question {currentIndex + 1} of {questions.length}
+                        문항 {currentIndex + 1} / {questions.length}
                     </p>
 
-                    {/* 지시문 강조 박스 */}
+                    {/* 지시문 영역 */}
                     {current.instruction && (
                         <div className="bg-blue-50 border border-blue-300 text-blue-700 text-sm rounded p-3 mb-3">
                             {current.instruction}
@@ -107,7 +109,7 @@ export default function ProductExam() {
 
                     <p className="text-xl font-medium mb-6">{current.question_text}</p>
 
-                    {/* 선택지 */}
+                    {/* 선택지 영역 */}
                     <ul className="space-y-3">
                         {current.options.map((opt, idx) => {
                             const isSelected = answers[current.question_id] === idx;
@@ -128,36 +130,36 @@ export default function ProductExam() {
                         })}
                     </ul>
 
-                    {/* 이동 버튼 */}
-                    <div className="flex justify-between mt-8">
+                    {/* 네비게이션 버튼 */}
+                    <div className="flex justify-between mt-10">
                         <button
                             onClick={handlePrev}
                             disabled={currentIndex === 0}
                             className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded disabled:opacity-50"
                         >
-                            Previous
+                            이전
                         </button>
                         {currentIndex < questions.length - 1 ? (
                             <button
                                 onClick={handleNext}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
                             >
-                                Next
+                                다음
                             </button>
                         ) : (
                             <button
                                 onClick={handleSubmit}
                                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
                             >
-                                Submit
+                                제출
                             </button>
                         )}
                     </div>
                 </div>
 
-                {/* ✅ 우측: 현황판 */}
+                {/* ✅ 우측: 전체 현황판 */}
                 <div className="bg-gray-50 border border-gray-200 p-4 rounded shadow-sm text-sm">
-                    <h3 className="font-semibold text-gray-700 mb-2">Questions</h3>
+                    <h3 className="font-semibold text-gray-700 mb-2">문항 목록</h3>
                     <div className="grid grid-cols-5 gap-2 mb-4">
                         {questions.map((q, idx) => {
                             const answered = answers[q.question_id] !== undefined;
@@ -180,15 +182,16 @@ export default function ProductExam() {
                         })}
                     </div>
 
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <div className="w-4 h-4 rounded bg-blue-600" /> Current
+                    {/* 범례 */}
+                    <div className="space-y-1 text-xs text-gray-600">
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded bg-blue-600" /> 현재
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <div className="w-4 h-4 rounded bg-blue-100" /> Answered
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded bg-blue-100" /> 응답 완료
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                            <div className="w-4 h-4 rounded border border-gray-300 bg-white" /> Not Answered
+                        <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded border border-gray-300 bg-white" /> 미응답
                         </div>
                     </div>
                 </div>

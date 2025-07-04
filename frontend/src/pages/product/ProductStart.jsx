@@ -1,13 +1,12 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom"; // ✅ useParams 추가
 
-function ProductStart({ testId }) {
+function ProductStart() {
     const navigate = useNavigate();
+    const { test_id } = useParams(); // ✅ URL 파라미터로부터 test_id 가져오기
 
     const handleExampleStart = () => {
-        // ✅ testName 값을 ProductExample 페이지로 함께 전달함
-        // 이 값은 exampleQuestions.js의 key와 정확히 일치해야 함
-        navigate(`/product/${testId}/example`, {
+        navigate(`/product/${test_id}/example`, {
             state: { testName: "언어이해검사 A" }, // ← 예제 key
         });
     };

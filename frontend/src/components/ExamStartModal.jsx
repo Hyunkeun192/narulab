@@ -1,9 +1,9 @@
 // src/components/ExamStartModal.jsx
 
 import React, { useEffect, useState } from "react";
-import { getTestQuestions } from "../api/testApi"; // ✅ 실제 문항 불러오는 API
+import { getTestQuestions } from "../api/testApi";
 import { motion } from "framer-motion";
-import ExampleQuestion from "./ExampleQuestion"; // ✅ 예제 문항 컴포넌트 추가
+import ExampleQuestion from "./ExampleQuestion";
 
 export default function ExamStartModal({ testId, testName, onClose }) {
     const [step, setStep] = useState("notice"); // notice → example → exam
@@ -11,12 +11,12 @@ export default function ExamStartModal({ testId, testName, onClose }) {
     const [answers, setAnswers] = useState({});
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // ✅ 전체 문항 로딩
+    // ✅ 검사 문항 불러오기
     useEffect(() => {
         const fetch = async () => {
             try {
                 const data = await getTestQuestions(testId);
-                setQuestions(data);
+                setQuestions(data.questions); // 반드시 questions만
             } catch (err) {
                 console.error("문항 불러오기 실패", err);
             }
@@ -50,7 +50,7 @@ export default function ExamStartModal({ testId, testName, onClose }) {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 relative max-h-[90vh] overflow-y-auto"
+                className="bg-white w-full max-w-5xl rounded-xl shadow-lg p-6 relative max-h-[95vh] overflow-y-auto"
             >
                 <button
                     onClick={onClose}
@@ -79,12 +79,12 @@ export default function ExamStartModal({ testId, testName, onClose }) {
                     </div>
                 )}
 
-                {/* ✅ 예제 문항 영역 - 컴포넌트 분리 */}
+                {/* ✅ 예제 문항 */}
                 {step === "example" && (
                     <ExampleQuestion testName="언어이해검사 A" onNext={() => setStep("exam")} />
                 )}
 
-                {/* ✅ 본검사 */}
+                {/* ✅ 본검사 문항 */}
                 {step === "exam" && questions.length > 0 && current && (
                     <div>
                         <div className="text-sm text-right text-gray-500 mb-2">
@@ -113,6 +113,7 @@ export default function ExamStartModal({ testId, testName, onClose }) {
                                 ))}
                         </ul>
 
+                        {/* ✅ 문항 번호 리스트 */}
                         <div className="flex gap-1 mb-4 flex-wrap">
                             {questions.map((q, idx) => (
                                 <button
@@ -128,6 +129,7 @@ export default function ExamStartModal({ testId, testName, onClose }) {
                             ))}
                         </div>
 
+                        {/* ✅ 하단 버튼 */}
                         <div className="flex justify-end">
                             {currentIndex < questions.length - 1 ? (
                                 <button

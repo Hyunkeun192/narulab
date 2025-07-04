@@ -81,7 +81,7 @@ export default function ExamStartModal({ testId, testName, onClose }) {
 
                 {/* ✅ 예제 문항 영역 - 컴포넌트 분리 */}
                 {step === "example" && (
-                    <ExampleQuestion testName={testName} onNext={() => setStep("exam")} />
+                    <ExampleQuestion testName="언어이해검사 A" onNext={() => setStep("exam")} />
                 )}
 
                 {/* ✅ 본검사 */}

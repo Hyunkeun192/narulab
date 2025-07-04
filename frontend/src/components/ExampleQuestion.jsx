@@ -1,5 +1,3 @@
-// frontend/src/components/ExampleQuestion.jsx
-
 import React, { useState } from "react";
 import { exampleQuestions } from "../data/exampleQuestions";
 
@@ -8,7 +6,7 @@ export default function ExampleQuestion({ testName, onNext }) {
     const [selectedOption, setSelectedOption] = useState(null);
 
     console.log("🔍 testName = ", testName);
-    
+
     const example = exampleQuestions[testName];
 
     console.log("📦 example = ", example);

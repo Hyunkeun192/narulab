@@ -80,6 +80,7 @@ const AppRoutes = () => (
     <Route path="/product/:test_id/example" element={<ProductExample />} />
     <Route path="/product/:test_id/exam" element={<ProductExam />} />
 
+
     {/* ✅ MainLayout 적용되는 나머지 경로들 */}
     <Route
       path="/*"

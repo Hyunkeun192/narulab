@@ -1,5 +1,3 @@
-// 기존 주석 유지 + 추가된 부분 주석 처리
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,9 +5,10 @@ function ProductStart({ testId }) {
     const navigate = useNavigate();
 
     const handleExampleStart = () => {
-        // ✅ testName을 함께 넘겨줍니다.
+        // ✅ testName 값을 ProductExample 페이지로 함께 전달함
+        // 이 값은 exampleQuestions.js의 key와 정확히 일치해야 함
         navigate(`/product/${testId}/example`, {
-            state: { testName: "언어이해검사 A" },
+            state: { testName: "언어이해검사 A" }, // ← 예제 key
         });
     };
 

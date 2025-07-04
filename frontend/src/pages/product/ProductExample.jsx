@@ -1,18 +1,15 @@
-// ✅ 기존 파일 기반으로 수정 적용 완료
-// ✅ 하드코딩된 지문 제거 + ExampleQuestion 컴포넌트 연동
-
 import React from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import ExampleQuestion from "../../components/ExampleQuestion";
 
 function ProductExample() {
-    const { testId } = useParams();
+    const { test_id } = useParams();  // ✅ 라우트 파라미터에 맞게 수정
     const navigate = useNavigate();
     const location = useLocation();
     const testName = location.state?.testName;
 
     const handleStartTest = () => {
-        navigate(`/product/${testId}/exam`);
+        navigate(`/product/${test_id}/exam`);  // ✅ 경로도 test_id로 맞춤
     };
 
     return (

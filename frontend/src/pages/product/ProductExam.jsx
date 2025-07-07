@@ -1,19 +1,38 @@
-// src/pages/ProductExam.jsx
-
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
+import { getTestQuestions } from "../../api/testApi";
 
-// ⏱️ 상단 타이머 컴포넌트
-function CountdownTimer({ duration, onTimeOver }) {
-    const [timeLeft, setTimeLeft] = useState(duration * 60);
+export default function ProductExam() {
+    const location = useLocation();
+    const testId = location?.state?.testId;
+    const testName = location?.state?.testName;
+
+    const [questions, setQuestions] = useState([]);
+    const [answers, setAnswers] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [submitted, setSubmitted] = useState(false);
+    const [score, setScore] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(25 * 60); // 25분
+
+    useEffect(() => {
+        const fetchQuestions = async () => {
+            try {
+                const data = await getTestQuestions(testId);
+                setQuestions(data?.questions || []);
+                setAnswers(new Array(data?.questions?.length || 0).fill(null));
+            } catch (err) {
+                console.error("문항 불러오기 실패:", err);
+            }
+        };
+        fetchQuestions();
+    }, [testId]);
 
     useEffect(() => {
         const timer = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    onTimeOver();
+                    handleSubmit();
                     return 0;
                 }
                 return prev - 1;
@@ -22,180 +41,133 @@ function CountdownTimer({ duration, onTimeOver }) {
         return () => clearInterval(timer);
     }, []);
 
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-
-    return (
-        <div className="text-right text-sm text-gray-700 font-medium mb-4">
-            <div className="border rounded px-3 py-1 inline-block">
-                남은 시간: {minutes}:{seconds.toString().padStart(2, "0")}
-            </div>
-        </div>
-    );
-}
-
-export default function ProductExam() {
-    const { test_id } = useParams();
-    const [questions, setQuestions] = useState([]);
-    const [answers, setAnswers] = useState({});
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [timeOver, setTimeOver] = useState(false);
-    const duration_minutes = 25;
-
-    const current = questions[currentIndex];
-
-    // ✅ API로 문항 불러오기
-    useEffect(() => {
-        const fetchQuestions = async () => {
-            try {
-                const res = await fetch(`/api/tests/${test_id}/questions-public`);
-                const data = await res.json();
-                setQuestions(data.questions || []);
-            } catch (err) {
-                console.error("문항 불러오기 실패:", err);
-            }
-        };
-        fetchQuestions();
-    }, [test_id]);
-
-    const handleSelect = (index) => {
-        setAnswers((prev) => ({
-            ...prev,
-            [current.question_id]: index,
-        }));
+    const formatTime = (seconds) => {
+        const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+        const s = String(seconds % 60).padStart(2, "0");
+        return `${m}:${s}`;
     };
 
-    const handleNext = () => {
-        if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1);
-    };
-
-    const handlePrev = () => {
-        if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
-    };
-
-    const handleMoveTo = (idx) => {
-        setCurrentIndex(idx);
+    const handleAnswer = (choiceIndex) => {
+        const updated = [...answers];
+        updated[currentIndex] = choiceIndex;
+        setAnswers(updated);
     };
 
     const handleSubmit = () => {
-        alert("검사 완료!\n총 문항 수: " + questions.length);
+        let sc = 0;
+        answers.forEach((ans, idx) => {
+            if (ans === questions[idx]?.correct) sc++;
+        });
+        setScore(sc);
+        setSubmitted(true);
     };
 
-    if (!current) return <div className="text-center mt-10">문항을 불러오는 중입니다...</div>;
+    if (submitted) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen">
+                <div className="bg-white p-8 rounded-xl shadow-md text-center w-[350px]">
+                    <div className="text-green-600 text-3xl mb-4">✔</div>
+                    <h2 className="text-xl font-semibold mb-2">Test Completed!</h2>
+                    <p className="text-gray-600 mb-4">Thank you for taking the test.</p>
+                    <div className="text-lg font-medium bg-blue-100 py-2 rounded">
+                        Your Score: <strong>{score}</strong> / {questions.length}
+                    </div>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                        Take Test Again
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const current = questions[currentIndex];
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-white z-50 overflow-y-auto px-6 py-6"
-        >
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-6">
-                {/* ✅ 좌측: 문항 영역 */}
-                <div>
-                    <CountdownTimer duration={duration_minutes} onTimeOver={() => setTimeOver(true)} />
+        <div className="flex flex-col p-6 max-w-5xl mx-auto min-h-screen">
+            {/* 타이머 */}
+            <div className="flex justify-end text-gray-600 mb-4">
+                Time Remaining: <span className="ml-2 font-semibold">{formatTime(timeLeft)}</span>
+            </div>
 
-                    <p className="text-lg font-semibold mb-2">
-                        문항 {currentIndex + 1} / {questions.length}
-                    </p>
+            {/* 문항 영역 */}
+            {current && (
+                <div className="bg-white p-6 rounded-xl shadow-md w-full">
+                    <div className="text-sm text-gray-500 mb-2">
+                        Question {currentIndex + 1} of {questions.length}
+                    </div>
+                    <h3 className="text-lg font-semibold text-blue-700 mb-2">
+                        {current.instruction}
+                    </h3>
+                    <div className="bg-blue-50 p-3 rounded-md mb-4 text-sm text-gray-800 leading-relaxed">
+                        {current.content}
+                    </div>
 
-                    {/* 지시문 영역 */}
-                    {current.instruction && (
-                        <div className="bg-blue-50 border border-blue-300 text-blue-700 text-sm rounded p-3 mb-3">
-                            {current.instruction}
-                        </div>
-                    )}
+                    {/* 선택지 */}
+                    <div className="flex flex-col gap-3">
+                        {current.choices.map((choice, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => handleAnswer(idx)}
+                                className={`text-left border px-4 py-2 rounded hover:bg-blue-50 ${answers[currentIndex] === idx
+                                        ? "border-blue-500 bg-blue-100"
+                                        : "border-gray-300"
+                                    }`}
+                            >
+                                {idx + 1}. {choice}
+                            </button>
+                        ))}
+                    </div>
 
-                    <p className="text-xl font-medium mb-6">{current.question_text}</p>
-
-                    {/* 선택지 영역 */}
-                    <ul className="space-y-3">
-                        {current.options.map((opt, idx) => {
-                            const isSelected = answers[current.question_id] === idx;
-                            return (
-                                <li
-                                    key={idx}
-                                    onClick={() => handleSelect(idx)}
-                                    className={`border rounded px-4 py-3 cursor-pointer flex items-center text-sm transition
-                                        ${isSelected
-                                            ? "bg-blue-100 border-blue-500"
-                                            : "hover:bg-gray-100 border-gray-300"
-                                        }`}
-                                >
-                                    <span className="mr-3 font-bold text-gray-700">{`①②③④⑤`[idx]}</span>
-                                    <span>{opt}</span>
-                                </li>
-                            );
-                        })}
-                    </ul>
-
-                    {/* 네비게이션 버튼 */}
-                    <div className="flex justify-between mt-10">
+                    {/* 하단 버튼 */}
+                    <div className="flex justify-between mt-6">
                         <button
-                            onClick={handlePrev}
                             disabled={currentIndex === 0}
-                            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded disabled:opacity-50"
+                            onClick={() => setCurrentIndex((prev) => prev - 1)}
+                            className="px-4 py-2 border rounded disabled:opacity-30"
                         >
-                            이전
+                            Previous
                         </button>
                         {currentIndex < questions.length - 1 ? (
                             <button
-                                onClick={handleNext}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                                onClick={() => setCurrentIndex((prev) => prev + 1)}
+                                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                             >
-                                다음
+                                Next
                             </button>
                         ) : (
                             <button
                                 onClick={handleSubmit}
-                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                             >
-                                제출
+                                Submit
                             </button>
                         )}
                     </div>
                 </div>
+            )}
 
-                {/* ✅ 우측: 전체 현황판 */}
-                <div className="bg-gray-50 border border-gray-200 p-4 rounded shadow-sm text-sm">
-                    <h3 className="font-semibold text-gray-700 mb-2">문항 목록</h3>
-                    <div className="grid grid-cols-5 gap-2 mb-4">
-                        {questions.map((q, idx) => {
-                            const answered = answers[q.question_id] !== undefined;
-                            const isCurrent = idx === currentIndex;
-                            return (
-                                <button
-                                    key={q.question_id}
-                                    onClick={() => handleMoveTo(idx)}
-                                    className={`w-8 h-8 rounded text-sm font-medium
-                                        ${isCurrent
-                                            ? "bg-blue-600 text-white"
-                                            : answered
-                                                ? "bg-blue-100 text-blue-800"
-                                                : "bg-white border border-gray-300 text-gray-500"
-                                        }`}
-                                >
-                                    {idx + 1}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* 범례 */}
-                    <div className="space-y-1 text-xs text-gray-600">
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded bg-blue-600" /> 현재
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded bg-blue-100" /> 응답 완료
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded border border-gray-300 bg-white" /> 미응답
-                        </div>
-                    </div>
+            {/* 우측 번호판 */}
+            <div className="flex justify-center mt-6">
+                <div className="grid grid-cols-10 gap-2">
+                    {questions.map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrentIndex(idx)}
+                            className={`w-8 h-8 rounded-full text-sm ${idx === currentIndex
+                                    ? "bg-blue-500 text-white"
+                                    : answers[idx] !== null
+                                        ? "bg-gray-300"
+                                        : "bg-white border border-gray-400"
+                                }`}
+                        >
+                            {idx + 1}
+                        </button>
+                    ))}
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }

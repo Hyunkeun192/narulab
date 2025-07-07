@@ -1,15 +1,20 @@
-import React, { useState } from "react";
-import { exampleQuestions } from "../data/exampleQuestions";
+// ExampleQuestion.jsx
 
+import React, { useState } from "react";
+// ✅ getExampleQuestion 함수 import
+import { getExampleQuestion } from "../data/exampleQuestions";
+
+/**
+ * [예제 문항 컴포넌트]
+ * - props: testName (검사 이름), onNext (본검사 시작 핸들러)
+ * - 검사 이름(testName)에 따라 해당하는 예제 문항을 불러오고 렌더링합니다.
+ */
 export default function ExampleQuestion({ testName, onNext }) {
     const [showExplanation, setShowExplanation] = useState(false);
     const [selectedOption, setSelectedOption] = useState(null);
 
-    console.log("🔍 testName = ", testName);
-
-    const example = exampleQuestions[testName];
-
-    console.log("📦 example = ", example);
+    // ✅ 예제 문항 가져오기 (함수 기반)
+    const example = getExampleQuestion(testName);
 
     if (!example) {
         return (
@@ -24,15 +29,15 @@ export default function ExampleQuestion({ testName, onNext }) {
             <h2 className="text-lg font-semibold mb-4">예제 문항</h2>
             <p className="mb-3">다음 글을 읽고 가장 적절한 보기를 선택하세요.</p>
 
-            {/* 지문 */}
+            {/* ✅ 지문 */}
             <div className="border p-4 rounded bg-gray-50 mb-4 text-sm text-gray-800 whitespace-pre-line leading-relaxed">
                 {example.passage}
             </div>
 
-            {/* 질문 */}
+            {/* ✅ 질문 */}
             <p className="font-medium mb-2">{example.question}</p>
 
-            {/* 선택지 */}
+            {/* ✅ 선택지 */}
             <ul className="space-y-2 text-sm mb-4">
                 {example.options.map((opt, idx) => (
                     <li
@@ -46,7 +51,7 @@ export default function ExampleQuestion({ testName, onNext }) {
                 ))}
             </ul>
 
-            {/* 해설 드롭다운 */}
+            {/* ✅ 해설 토글 */}
             <div className="mb-4">
                 <button
                     onClick={() => setShowExplanation((prev) => !prev)}
@@ -61,7 +66,7 @@ export default function ExampleQuestion({ testName, onNext }) {
                 )}
             </div>
 
-            {/* 본검사 시작 버튼 */}
+            {/* ✅ 본검사 시작 버튼 */}
             <div className="text-right">
                 <button
                     onClick={onNext}

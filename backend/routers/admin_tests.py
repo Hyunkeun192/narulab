@@ -302,3 +302,31 @@ def toggle_publish_test(
         "test_id": test_id,
         "is_published": test.is_published
     }
+
+# ✅ 검사 삭제 API
+@router.delete("/tests/{test_id}")
+def delete_test(
+    test_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_admin_user)
+):
+    """
+    ✅ 검사 삭제 API
+    - 테스트 ID로 검사 삭제
+    - 연결된 문항 연결 정보 먼저 삭제 필요 (FK 문제 방지)
+    """
+    from backend.models.test_question_links import TestQuestionLink
+    from backend.models.test import Test
+
+    # 🔧 연결된 문항 연결 정보 먼저 삭제
+    db.query(TestQuestionLink).filter(TestQuestionLink.test_id == test_id).delete()
+
+    # 🔧 실제 테스트 삭제
+    test = db.query(Test).filter(Test.test_id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    db.delete(test)
+    db.commit()
+
+    return {"message": "Test deleted successfully."}

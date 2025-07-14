@@ -67,6 +67,9 @@ app.include_router(admin_pdf.router)
 app.include_router(admin_norms.router)
 app.include_router(admin_upload.router)  # 추가
 app.include_router(tests.router)
+app.include_router(admin_questions.router)
+app.include_router(admin_tests.router)
+
 
 
 
@@ -74,7 +77,3 @@ app.include_router(tests.router)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Narulab API!"}
-
-if __name__ == "__main__":
-    from backend.database.database import Base, engine  # [경로 수정] backend.database 추가
-    Base.metadata.create_all(bind=engine)

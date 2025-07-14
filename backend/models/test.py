@@ -44,17 +44,6 @@ class QuestionTypeEnum(str, enum.Enum):
     image = "image"
     text_image = "text+image"
 
-# ✅ 사용자 응답 테이블
-class Response(Base):
-    __tablename__ = "responses"
-
-    response_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    email = Column(String(255), nullable=False)
-    test_id = Column(String(36), ForeignKey("tests.test_id"))
-    question_id = Column(String(36), ForeignKey("questions.question_id"))
-    selected_option_ids = Column(JSON)
-    response_time_sec = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
 
 # ✅ 검사 리포트 테이블 (분석용)
 class TestReport(Base):

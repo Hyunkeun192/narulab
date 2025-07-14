@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database.database import get_db
 # ✅ Report → TestReport로 이름 변경하여 중복 오류 해결
-from backend.models.test import Test, Question, Option, Response, TestReport
+from backend.models.test import Test, Question, Option, TestReport
 from backend.models.test_analytics_by_group import TestAnalyticsByGroup, GroupTypeEnum
 from backend.models.question_stats_by_group import QuestionStatsByGroup
 from backend.models.sten_rule import STENRule  # ✅ STEN 등급 규칙 모델 import
 from backend.models.user import UserProfile, User  # ✅ 사용자 정보 및 프로필
-from backend.dependencies.admin_auth import get_current_user  # ✅ 관리자 권한 확인 추가
+from backend.dependencies.admin_auth import get_current_user, get_current_admin_user  # ✅ 관리자 권한 확인 추가
 from typing import List
 from pydantic import BaseModel
 from enum import Enum
@@ -366,3 +366,31 @@ def get_test_questions_for_user(test_id: str, db: Session = Depends(get_db)):
         duration_minutes=test.duration_minutes,
         questions=question_data
     )
+
+# ✅ 검사 삭제 API
+@router.delete("/api/tests/{test_id}")
+def delete_test(
+    test_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_admin_user)
+):
+    """
+    ✅ 검사 삭제 API
+    - 테스트 ID로 검사 삭제
+    - 연결된 문항 연결 정보 먼저 삭제 필요 (FK 문제 방지)
+    """
+    from backend.models.test_question_links import TestQuestionLink
+    from backend.models.test import Test
+
+    # 🔧 연결된 문항 연결 정보 먼저 삭제
+    db.query(TestQuestionLink).filter(TestQuestionLink.test_id == test_id).delete()
+
+    # 🔧 실제 테스트 삭제
+    test = db.query(Test).filter(Test.test_id == test_id).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    db.delete(test)
+    db.commit()
+
+    return {"message": "Test deleted successfully."}

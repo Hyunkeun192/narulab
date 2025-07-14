@@ -234,3 +234,39 @@ def get_tests_using_question(
     # 검사명 조회
     tests = db.query(Test).filter(Test.test_id.in_(test_ids)).all()
     return [t.test_name for t in tests]
+
+# ✅ 문항 삭제 API
+@router.delete("/{question_id}")  # 프론트엔드 요청 경로에 맞춰 DELETE 메서드 추가
+def delete_question(
+    question_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_admin_user)
+):
+    """
+    ✅ 문항 삭제 API
+    - 문항 ID에 해당하는 데이터 삭제
+    - 삭제 전 연결된 options / responses / test_question_links를 함께 삭제 (FK 무결성 유지)
+    """
+    # 🔧 문자열로 변환 (MySQL UUID 저장형식 대응)
+    question_id_str = str(question_id)
+
+    # ✅ Option (선택지) 먼저 삭제
+    db.query(Option).filter(Option.question_id == question_id_str).delete()
+
+    # ✅ TestQuestionLink (검사-문항 연결) 먼저 삭제
+    from backend.models.test_question_links import TestQuestionLink
+    db.query(TestQuestionLink).filter(TestQuestionLink.question_id == question_id_str).delete()
+
+    # ✅ Response (응답 데이터) 먼저 삭제
+    from backend.models.response import UserResponse  # ❗️ 올바른 모델 import
+    db.query(UserResponse).filter(UserResponse.question_id == question_id_str).delete()
+
+    # ✅ Question (문항) 최종 삭제
+    question = db.query(Question).filter(Question.question_id == question_id_str).first()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    db.delete(question)
+    db.commit()
+
+    return {"message": "Question and related data deleted successfully."}
